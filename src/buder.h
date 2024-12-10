@@ -10,6 +10,42 @@
 // #include "libraries/sokol/sokol_fetch.h"
 #include "libraries/sokol/sokol_gl.h"
 
+// Some Basic Colors
+#define LIGHTGRAY   (buder_color_t){ 211, 211, 211, 255 } 
+#define GRAY        (buder_color_t){ 150, 150, 150, 255 } 
+#define DARKGRAY    (buder_color_t){ 90, 90, 90, 255 } 
+
+#define YELLOW      (buder_color_t){ 255, 245, 60, 255 } 
+#define GOLD        (buder_color_t){ 255, 200, 30, 255 } 
+#define ORANGE      (buder_color_t){ 255, 140, 20, 255 }  
+
+#define PINK        (buder_color_t){ 255, 120, 200, 255 }   
+#define RED         (buder_color_t){ 230, 50, 60, 255 }     
+#define MAROON      (buder_color_t){ 175, 40, 60, 255 }    
+
+#define GREEN       (buder_color_t){ 0, 220, 70, 255 }     
+#define LIME        (buder_color_t){ 50, 180, 50, 255 }     
+#define DARKGREEN   (buder_color_t){ 0, 100, 40, 255 }     
+
+#define SKYBLUE     (buder_color_t){ 120, 200, 255, 255 }  
+#define BLUE        (buder_color_t){ 0, 130, 245, 255 }    
+#define DARKBLUE    (buder_color_t){ 0, 90, 170, 255 }  
+
+#define PURPLE      (buder_color_t){ 190, 130, 255, 255 } 
+#define VIOLET      (buder_color_t){ 140, 70, 200, 255 }  
+#define DARKPURPLE  (buder_color_t){ 115, 40, 140, 255 } 
+
+#define BEIGE       (buder_color_t){ 225, 200, 150, 255 } 
+#define BROWN       (buder_color_t){ 130, 100, 75, 255 }
+#define DARKBROWN   (buder_color_t){ 85, 65, 50, 255 } 
+
+#define WHITE       (buder_color_t){ 255, 255, 255, 255 } 
+#define BLACK       (buder_color_t){ 0, 0, 0, 255 } 
+#define BLANK       (buder_color_t){ 0, 0, 0, 0 }  
+
+#define MAGENTA     (buder_color_t){ 255, 0, 255, 255 } 
+#define BUDEWHITE   (buder_color_t){ 240, 240, 240, 255 }
+
 typedef struct buder_t
 {
     sg_pass_action pass_action;
