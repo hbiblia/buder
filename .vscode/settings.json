@@ -7,6 +7,8 @@
         "xiosbase": "c",
         "buder.h": "c",
         "sokol_gfx.h": "c",
-        "stb_image.h": "c"
+        "stb_image.h": "c",
+        "sokol_app.h": "c",
+        "stdio.h": "c"
     }
 }
