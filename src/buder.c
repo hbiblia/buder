@@ -1,9 +1,12 @@
 // ---------------------------------------------------------
 // Buder es una librería simple de renderizado 2D
-// basada en sokol_gfx.h
+// basada en sokol_gl.h
 // ---------------------------------------------------------
 #define SOKOL_IMPL
 #include "buder.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "libraries/stb/stb_image.h"
 
 void buder_init(buder_t *buder)
 {
@@ -36,18 +39,27 @@ void buder_init(buder_t *buder)
     buder->layers = 1; // default layers
 }
 
-void buder_set_size(buder_t *buder, int width, int height)
+void buder_set_stage_size(buder_t *buder, int width, int height)
 {
     buder->width = width;
     buder->height = height;
 }
 
+void buder_set_stage_color(buder_t *buder, buder_color_t color)
+{
+    buder->pass_action.colors[0].clear_value = (sg_color){color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f};
+}
+
 void buder_begin_frame(buder_t *buder)
 {
     sgl_defaults();
+    sgl_load_pipeline(buder->pipeline);
+
     sgl_viewport(0, 0, buder->width, buder->height, true);
+
     sgl_matrix_mode_projection();
     sgl_ortho(0.0f, (float)buder->width, (float)buder->height, 0.0f, -1.0f, 1.0f);
+
     sgl_matrix_mode_modelview();
     sgl_push_matrix();
 }
@@ -71,6 +83,79 @@ void buder_shutdown(buder_t *buder)
     sg_shutdown();
 }
 
+// ----------
+// load texture, font, audio, etc
+// ----------
+buder_image_t buder_load_texture(const char *path)
+{
+    int width, height, channels;
+    unsigned char *data = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
+    if (!data)
+    {
+        printf("Failed to load texture: %s", path);
+        return (buder_image_t){0};
+    }
+
+    sg_image img_id = sg_make_image(&(sg_image_desc){
+        .width = width,
+        .height = height,
+        .pixel_format = SG_PIXELFORMAT_RGBA8,
+        .data.subimage[0][0] = {
+            .ptr = data,
+            .size = (size_t)(width * height * 4),
+        },
+    });
+
+    sg_sampler sampler_id = sg_make_sampler(&(sg_sampler_desc){
+        .min_filter = SG_FILTER_NEAREST,
+        .mag_filter = SG_FILTER_NEAREST,
+        .wrap_u = SG_WRAP_REPEAT,
+        .wrap_v = SG_WRAP_REPEAT,
+    });
+
+    stbi_image_free(data);
+
+    return (buder_image_t){.id = img_id.id, .width = width, .height = height, .sampler = sampler_id.id};
+}
+
+void buder_texture_free(buder_image_t texture)
+{
+    sg_destroy_image((sg_image){texture.id});
+    sg_destroy_sampler((sg_sampler){texture.sampler});
+}
+
+// ----------
+// trasnform: translate, rotate, scale
+// ----------
+
+void buder_translate(float x, float y)
+{
+    sgl_translate(x, y, 0.0f);
+}
+
+void buder_rotate(float angle)
+{
+    sgl_rotate(angle, 0.0f, 0.0f, 1.0f);
+}
+
+void buder_scale(float x, float y)
+{
+    sgl_scale(x, y, 1.0f);
+}
+
+void buder_begin_transform()
+{
+    sgl_push_matrix();
+}
+
+void buder_end_transform()
+{
+    sgl_pop_matrix();
+}
+
+// ----------
+// draw
+// ----------
 void buder_draw_rect(float x, float y, float w, float h, buder_color_t fill_color, buder_color_t outline_color, float outline_thickness, int layer_index)
 {
     sgl_layer(layer_index);
@@ -219,8 +304,48 @@ void buder_draw_text(const char *text, float x, float y, buder_color_t color, in
     // TODO: Implement text rendering
 }
 
-void buder_draw_texture(buder_texture_t texture, float x, float y, float dw, float dh, int layer_index)
+void buder_draw_texture(buder_image_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, int layer_index)
 {
-    // TODO: Implement texture rendering
+    src.w = (src.w == 0) ? texture.width : src.w;
+    src.h = (src.h == 0) ? texture.height : src.h;
+
+    dst.w = (dst.w == 0) ? src.w : dst.w;
+    dst.h = (dst.h == 0) ? src.h : dst.h;
+
+    sgl_layer(layer_index);
+
+    sgl_enable_texture();
+    sgl_texture(
+        (sg_image){texture.id}, 
+        (sg_sampler){texture.sampler}
+    );
+
+    // sgl_load_default_pipeline();
+
+    float tex_left = src.x / (float)texture.width;
+    float tex_top = src.y / (float)texture.height;
+    float tex_right = (src.x + src.w) / (float)texture.width;
+    float tex_bottom = (src.y + src.h) / (float)texture.height;
+
+    sgl_push_matrix();
+
+    sgl_translate(dst.x, dst.y, 0.0f);
+    sgl_scale(scale.x, scale.y, 1.0f);
+    sgl_rotate(angle, 0.0f, 0.0f, 1.0f);
+    sgl_translate(-origin.x, -origin.y, 0.0f);
+
+    sgl_begin_quads();
+    sgl_c4f(1.0f, 1.0f, 1.0f, 1.0f);
+    {
+        sgl_v2f_t2f(0.0f, 0.0f, tex_left, tex_top);
+        sgl_v2f_t2f(0.0f, dst.h, tex_left, tex_bottom);
+        sgl_v2f_t2f(dst.w, dst.h, tex_right, tex_bottom);
+        sgl_v2f_t2f(dst.w, 0.0f, tex_right, tex_top);
+    }
+    sgl_end();
+
+    sgl_pop_matrix();
+
+    sgl_disable_texture();
 }
 

@@ -5,6 +5,8 @@
         "xtr1common": "c",
         "xutility": "c",
         "xiosbase": "c",
-        "buder.h": "c"
+        "buder.h": "c",
+        "sokol_gfx.h": "c",
+        "stb_image.h": "c"
     }
 }

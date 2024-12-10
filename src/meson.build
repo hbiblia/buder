@@ -10,7 +10,7 @@ headers = [
     'buder.h'
 ]
 
-include_directs = include_directories(['.', 'libraries/','common/'])
+include_directs = include_directories(['.', 'libraries/'])
 
 # compile una libreria dll
 # share_libbuder = shared_library('buder', sources, dependencies: deps, include_directories: include_directs, install: true)
