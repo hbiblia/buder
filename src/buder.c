@@ -134,6 +134,7 @@ void buder_end_frame(buder_t *buder)
 void buder_shutdown(buder_t *buder)
 {
     ma_engine_uninit(&audio_engine);
+    sfons_destroy(font_ctx);
     sgl_shutdown();
     sg_shutdown();
 }
@@ -173,7 +174,7 @@ buder_texture_t buder_load_texture(const char *path)
     return (buder_texture_t){.id = img_id.id, .width = width, .height = height, .sampler = sampler_id.id};
 }
 
-void buder_texture_free(buder_texture_t texture)
+void buder_free_texture(buder_texture_t texture)
 {
     sg_destroy_image((sg_image){texture.id});
     sg_destroy_sampler((sg_sampler){texture.sampler});
@@ -184,6 +185,11 @@ buder_font_t buder_load_font(const char *filename)
     buder_font_t font_data = {0};
     font_data.font = fonsAddFont(font_ctx, buder_file_name_without_ext(filename), filename);
     return font_data;
+}
+
+void buder_free_font(buder_font_t font)
+{
+    // fonsDeleteFont(font_ctx, font.font);
 }
 
 // ----------
@@ -211,6 +217,22 @@ void buder_begin_transform()
 }
 
 void buder_end_transform()
+{
+    sgl_pop_matrix();
+}
+
+// ----------
+// camera 2d: offset, target, rotation, zoom
+// ----------
+void buder_begin_camera(buder_t *buder, buder_camera_t camera)
+{
+    sgl_push_matrix();
+    sgl_translate(camera.offset.x, camera.offset.y, 0.0f);
+    sgl_rotate(camera.rotation, 0.0f, 0.0f, 1.0f);
+    sgl_scale(camera.zoom, camera.zoom, 1.0f);
+}
+
+void buder_end_camera(void)
 {
     sgl_pop_matrix();
 }
@@ -425,7 +447,6 @@ void buder_draw_grid(int width, int height, int cell_size, buder_color_t color, 
 
     sgl_end();
 }
-
 
 // ----------
 // text

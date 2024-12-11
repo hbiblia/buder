@@ -240,6 +240,14 @@ typedef struct buder_vec2_t
     float y;
 } buder_vec2_t;
 
+typedef struct buder_camera_t
+{
+    buder_vec2_t offset;
+    buder_vec2_t target;
+    float rotation;
+    float zoom;
+} buder_camera_t;
+
 typedef struct buder_texture_t
 {
     uint32_t id;
@@ -281,10 +289,14 @@ void buder_scale(float x, float y);
 void buder_begin_transform();
 void buder_end_transform();
 
+void buder_begin_camera(buder_t *buder, buder_camera_t camera);
+void buder_end_camera(void);
+
 buder_texture_t buder_load_texture(const char *path);
-void buder_texture_free(buder_texture_t texture);
+void buder_free_texture(buder_texture_t texture);
 
 buder_font_t buder_load_font(const char *filename);
+void buder_free_font(buder_font_t font);
 
 void buder_draw_rect(float x, float y, float w, float h, buder_color_t fill_color, buder_color_t outline_color, float outline_thickness, int layer_index);
 void buder_draw_line(float x0, float y0, float x1, float y1, float thickness, buder_color_t color, int layer_index);
