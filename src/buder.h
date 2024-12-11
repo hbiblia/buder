@@ -10,6 +10,7 @@
 #include "libraries/sokol/sokol_gl.h"
 
 // Some Basic Colors
+#define GRIDBLACK    (buder_color_t){ 20, 20, 20, 255 }
 #define LIGHTGRAY   (buder_color_t){ 211, 211, 211, 255 } 
 #define GRAY        (buder_color_t){ 150, 150, 150, 255 } 
 #define DARKGRAY    (buder_color_t){ 90, 90, 90, 255 } 
@@ -289,6 +290,7 @@ void buder_draw_rect(float x, float y, float w, float h, buder_color_t fill_colo
 void buder_draw_line(float x0, float y0, float x1, float y1, float thickness, buder_color_t color, int layer_index);
 void buder_draw_circle(float x, float y, float radius, buder_color_t fill_color, buder_color_t outline_color, float outline_thickness, int layer_index);
 void buder_draw_triangle(float x0, float y0, float x1, float y1, float x2, float y2, buder_color_t color, int layer_index);
+void buder_draw_grid(int width, int height, int cell_size, buder_color_t color, int layer_index);
 void buder_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, int layer_index);
 
 void buder_draw_text(buder_font_t font, const char *text, float x, float y, float font_size, buder_vec2_t origin, buder_color_t color, int layer_index);
@@ -297,7 +299,6 @@ int buder_text_measure(buder_font_t font, const char *text, float font_size);
 void buder_play_sound(const char *audio_path);
 
 int buder_random_int(int min, int max);
-
 char *buder_string_format(const char *str, ...);
 const char *buder_file_name_get(const char *filePath);
 char *buder_file_name_without_ext(const char *filepath);

@@ -405,6 +405,28 @@ void buder_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t 
     sgl_disable_texture();
 }
 
+void buder_draw_grid(int width, int height, int cell_size, buder_color_t color, int layer_index)
+{
+    sgl_layer(layer_index);
+    sgl_begin_lines();
+    sgl_c4b(color.r, color.g, color.b, color.a);
+
+    for (int x = 0; x <= width; x += cell_size)
+    {
+        sgl_v2f((float)x, 0.0f);
+        sgl_v2f((float)x, (float)height);
+    }
+
+    for (int y = 0; y <= height; y += cell_size)
+    {
+        sgl_v2f(0.0f, (float)y);
+        sgl_v2f((float)width, (float)y);
+    }
+
+    sgl_end();
+}
+
+
 // ----------
 // text
 // ----------

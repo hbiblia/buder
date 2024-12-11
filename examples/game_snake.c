@@ -204,6 +204,7 @@ void bwindow_frame(buder_t *buder, float delta)
 
             draw_food();
             draw_snake();
+            buder_draw_grid(buder->width, buder->height, GRID_SIZE, GRIDBLACK, 0);
         }
     }
     buder_end_frame(buder);
