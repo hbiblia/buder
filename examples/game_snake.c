@@ -1,189 +1,210 @@
 #include "../src/buder.h"
 #include <stdio.h>
+#include <stdbool.h>
 
-#define SNAKE_SIZE 256
-#define FOOD_SIZE 20
+#define SNAKE_MAX_LENGTH 256
 #define GRID_SIZE 20
 #define SNAKE_FACE 0
 
-typedef struct Actor
+typedef struct
 {
     buder_vec2_t position;
     buder_vec2_t velocity;
     buder_vec2_t size;
-    buder_color_t background;
+    buder_color_t color;
     bool enabled;
 } Actor;
 
-static Actor Snake[SNAKE_SIZE] = {0};
-static int snakeCounterTail = 1;
-static buder_vec2_t snakePositionTail[SNAKE_SIZE] = {0};
-static int counter_frame;
+static buder_font_t game_font;
+static Actor snake_body[SNAKE_MAX_LENGTH] = {0};
+static buder_vec2_t snake_trail[SNAKE_MAX_LENGTH] = {0};
+static int snake_length = 1;
+static int frame_counter = 0;
+static int snake_score = 0;
+static Actor food = {0};
+static bool game_over = false;
 
-static Actor Food = {0};
-
-static bool gameOver = false;
-static bool pause = false;
-
-static void game_over_init(int width, int height);
-
-// ---------------------------------------------------------
-// SNAKE
-// ---------------------------------------------------------
-static void snake_init(int width, int height)
+bool is_valid_movement(buder_vec2_t current_velocity, buder_vec2_t new_velocity)
 {
-    for (int i = 0; i < SNAKE_SIZE; i++)
-    {
-        Snake[i].position = (buder_vec2_t){width / 2, height / 2};
-        Snake[i].velocity = (buder_vec2_t){0, 0};
-        Snake[i].size = (buder_vec2_t){GRID_SIZE, GRID_SIZE};
-        Snake[i].background = MAGENTA;
-        Snake[i].enabled = false;
-        snakePositionTail[i] = (buder_vec2_t){0, 0};
-    }
-
-    snakeCounterTail = 1;
-    counter_frame = 0;
+    return (current_velocity.x != -new_velocity.x) &&
+           (current_velocity.y != -new_velocity.y);
 }
 
-static void snake_update(int width, int height)
+bool is_position_valid(buder_vec2_t position, Actor *snake, int snake_length)
 {
-    for (int i = 0; i < snakeCounterTail; i++)
+    for (int i = 0; i < snake_length; i++)
     {
-        snakePositionTail[i] = Snake[i].position;
-        Snake[i].background = i == 0 ? BLUE : DARKBLUE;
+        if (position.x == snake[i].position.x &&
+            position.y == snake[i].position.y)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void place_food(int width, int height)
+{
+    do
+    {
+        food.position = (buder_vec2_t){
+            ((float)buder_random_int(0, (width / GRID_SIZE) - 1) * GRID_SIZE),
+            ((float)buder_random_int(0, (height / GRID_SIZE) - 1) * GRID_SIZE)};
+    } while (!is_position_valid(food.position, snake_body, snake_length));
+
+    food.enabled = true;
+}
+
+static void initialize_snake(int width, int height)
+{
+    for (int i = 0; i < SNAKE_MAX_LENGTH; i++)
+    {
+        snake_body[i] = (Actor){
+            .position = {width / 2, height / 2},
+            .velocity = {0, 0},
+            .size = {GRID_SIZE, GRID_SIZE},
+            .color = (i == 0) ? BLUE : DARKBLUE,
+            .enabled = false};
+        snake_trail[i] = (buder_vec2_t){0, 0};
     }
 
-    if ((counter_frame % GRID_SIZE) == 0)
+    snake_body[SNAKE_FACE].velocity = (buder_vec2_t){GRID_SIZE, 0};
+
+    snake_length = 1;
+    snake_score = 0;
+    frame_counter = 0;
+}
+
+static void update_snake_position(int width, int height)
+{
+    for (int i = 0; i < snake_length; i++)
     {
-        for (int i = 0; i < snakeCounterTail; i++)
+        snake_trail[i] = snake_body[i].position;
+        snake_body[i].color = (i == 0) ? BLUE : DARKBLUE;
+    }
+
+    if ((frame_counter % GRID_SIZE) == 0)
+    {
+        for (int i = snake_length - 1; i > 0; i--)
         {
-            if (i == SNAKE_FACE)
-            {
-                Snake[i].position.x += Snake[i].velocity.x;
-                Snake[i].position.y += Snake[i].velocity.y;
-                Snake[i].enabled = true;
-            }
-            else
-                Snake[i].position = snakePositionTail[i - 1];
+            snake_body[i].position = snake_body[i - 1].position;
+        }
+
+        snake_body[SNAKE_FACE].position.x += snake_body[SNAKE_FACE].velocity.x;
+        snake_body[SNAKE_FACE].position.y += snake_body[SNAKE_FACE].velocity.y;
+        snake_body[SNAKE_FACE].enabled = true;
+    }
+
+    buder_vec2_t head_pos = snake_body[SNAKE_FACE].position;
+    if (head_pos.x >= width || head_pos.x < 0 ||
+        head_pos.y >= height || head_pos.y < 0)
+    {
+        game_over = true;
+    }
+
+    for (int i = 1; i < snake_length; i++)
+    {
+        if (head_pos.x == snake_body[i].position.x &&
+            head_pos.y == snake_body[i].position.y)
+        {
+            game_over = true;
+            break;
         }
     }
 
-    // Verificar si la serpiente choca consigo misma
-    for (int i = 1; i < snakeCounterTail; i++)
+    frame_counter++;
+}
+
+static void update_food(int width, int height)
+{
+    if (!food.enabled)
     {
-        if (Snake[SNAKE_FACE].position.x == Snake[i].position.x && Snake[SNAKE_FACE].position.y == Snake[i].position.y)
+        place_food(width, height);
+    }
+
+    for (int i = 0; i < snake_length; i++)
+    {
+        if (snake_body[i].position.x == food.position.x &&
+            snake_body[i].position.y == food.position.y)
         {
-            game_over_init(width, height);
-        }
-    }
-
-    // Verificar si la serpiente choca con los bordes
-    if (Snake[SNAKE_FACE].position.x >= width || Snake[SNAKE_FACE].position.x < 0 || Snake[SNAKE_FACE].position.y >= height || Snake[SNAKE_FACE].position.y < 0)
-    {
-        game_over_init(width, height);
-    }
-
-    counter_frame++;
-}
-
-static void snake_draw(void)
-{
-    for (int i = 0; i < snakeCounterTail; i++)
-    {
-        buder_draw_rect(Snake[i].position.x, Snake[i].position.y, Snake[i].size.x, Snake[i].size.y, Snake[i].background, BLANK, 0, 0);
-    }
-}
-
-// ---------------------------------------------------------
-// FOOD
-// ---------------------------------------------------------
-static void food_update_position(int width, int height)
-{
-    Food.position = (buder_vec2_t){((float)buder_random_int(0, (width / FOOD_SIZE) - 1) * FOOD_SIZE), ((float)buder_random_int(0, (height / FOOD_SIZE) - 1) * FOOD_SIZE)};
-}
-
-static void food_init(void)
-{
-    Food.size = (buder_vec2_t){FOOD_SIZE, FOOD_SIZE};
-    Food.background = BUDEWHITE;
-}
-
-static void food_update(int width, int height)
-{
-    // cuando la comida no esta habilitada, se actualiza su posicion.
-    if (!Food.enabled)
-    {
-        food_update_position(width, height);
-        Food.enabled = true;
-
-        for (int i = 0; i < snakeCounterTail; i++)
-        {
-            if (Snake[i].position.x == Food.position.x && Snake[i].position.y == Food.position.y)
-            {
-                food_update_position(width, height);
-            }
-        }
-    }
-
-    // Verificar si alguna parte de la serpiente come la comida
-    for (int i = 0; i < snakeCounterTail; i++)
-    {
-        if (Snake[i].position.x == Food.position.x && Snake[i].position.y == Food.position.y)
-        {
-            Snake[snakeCounterTail].position = snakePositionTail[snakeCounterTail - 1];
-            snakeCounterTail += 1;
-            Food.enabled = false;
+            snake_body[snake_length].position = snake_trail[snake_length - 1];
+            snake_length++;
+            snake_score++;
+            food.enabled = false;
             buder_play_sound("resources/fruit-hit.wav");
+            break;
         }
     }
 }
 
-static void food_draw()
+static void draw_snake(void)
 {
-    buder_draw_rect(Food.position.x, Food.position.y, Food.size.x, Food.size.y, Food.background, BLANK, 0, 0);
+    for (int i = 0; i < snake_length; i++)
+    {
+        buder_draw_rect(
+            snake_body[i].position.x,
+            snake_body[i].position.y,
+            snake_body[i].size.x,
+            snake_body[i].size.y,
+            snake_body[i].color,
+            BLANK, 0, 0);
+    }
 }
 
-// ---------------------------------------------------------
-// GameObver
-// ---------------------------------------------------------
-static void game_over_init(int width, int height)
+static void draw_food(void)
 {
-    gameOver = true;
-    snake_init(width, height);
+    buder_draw_rect(
+        food.position.x,
+        food.position.y,
+        food.size.x,
+        food.size.y,
+        food.color,
+        BLANK, 0, 0);
 }
 
-static void game_over(int width, int height)
-{
-    buder_draw_text("\n\tGame Over", width / 2, height / 2, RED, 0);
-    buder_draw_text("\n\n\tPress Space to Restart", width / 2, height / 2, RED, 0);
-}
-
-// ---------------------------------------------------------
-// Game
-// ---------------------------------------------------------
 void bwindow_init(buder_t *buder)
 {
-    snake_init(buder->width, buder->height);
-    food_init();
+    game_font = buder_load_font("resources/DotGothic16-Regular.ttf");
+    initialize_snake(buder->width, buder->height);
+
+    food.size = (buder_vec2_t){GRID_SIZE, GRID_SIZE};
+    food.color = BUDEWHITE;
 }
 
 void bwindow_frame(buder_t *buder, float delta)
 {
-    snake_update(buder->width, buder->height);
-    food_update(buder->width, buder->height);
+    update_snake_position(buder->width, buder->height);
+    update_food(buder->width, buder->height);
 
     buder_begin_frame(buder);
     {
-        if (gameOver)
+        if (game_over)
         {
-            game_over(buder->width, buder->height);
-        }else {
-            buder_draw_text("\n\tMove the Snake Up, Down, Left, or Right.", buder->width / 2, buder->height / 2, WHITE, 0);
-            food_draw();
-        }
+            float center_x = buder->width / 2;
+            float center_y = buder->height / 2;
 
-        snake_draw();
+            buder_draw_text(game_font, "Game Over",
+                            center_x, center_y, 30,
+                            (buder_vec2_t){0.5f, 0.0f}, RED, 1);
+
+            buder_draw_text(game_font, "Press Space to Restart",
+                            center_x, center_y + 20, 20,
+                            (buder_vec2_t){0.5f, 0.0f}, RED, 1);
+        }
+        else
+        {
+            buder_draw_text(game_font, buder_string_format("Score: %d", snake_score), 10, 20, 20,
+                            (buder_vec2_t){0.0f, 0.0f}, WHITE, 1);
+
+            buder_draw_text(game_font,
+                            "Move the Snake Up, Down, Left, or Right.",
+                            buder->width / 2,
+                            buder->height - 30, 20,
+                            (buder_vec2_t){0.5f, 0.0f}, WHITE, 1);
+
+            draw_food();
+            draw_snake();
+        }
     }
     buder_end_frame(buder);
 }
@@ -192,34 +213,41 @@ void bwindow_event(buder_t *buder, const buder_event_t *event)
 {
     if (event->type == BUDER_EVENT_KEY_DOWN)
     {
-        if (event->key == BUDER_KEY_SPACE && gameOver == true)
+        if (event->key == BUDER_KEY_SPACE && game_over)
         {
-            gameOver = false;
+            game_over = false;
+            initialize_snake(buder->width, buder->height);
         }
-        else
+        else if (!game_over)
         {
-            if (event->key == BUDER_KEY_UP && (Snake[SNAKE_FACE].velocity.y == 0) && Snake[SNAKE_FACE].enabled)
+            Actor *head = &snake_body[SNAKE_FACE];
+            bool can_change_direction = head->enabled;
+            buder_vec2_t new_velocity = head->velocity;
+
+            switch (event->key)
             {
-                Snake[SNAKE_FACE].velocity = (buder_vec2_t){0, -GRID_SIZE};
-                Snake[SNAKE_FACE].enabled = false;
+            case BUDER_KEY_UP:
+            case BUDER_KEY_W:
+                new_velocity = (buder_vec2_t){0, -GRID_SIZE};
+                break;
+            case BUDER_KEY_DOWN:
+            case BUDER_KEY_S:
+                new_velocity = (buder_vec2_t){0, GRID_SIZE};
+                break;
+            case BUDER_KEY_LEFT:
+            case BUDER_KEY_A:
+                new_velocity = (buder_vec2_t){-GRID_SIZE, 0};
+                break;
+            case BUDER_KEY_RIGHT:
+            case BUDER_KEY_D:
+                new_velocity = (buder_vec2_t){GRID_SIZE, 0};
+                break;
             }
 
-            if (event->key == BUDER_KEY_DOWN && (Snake[SNAKE_FACE].velocity.y == 0) && Snake[SNAKE_FACE].enabled)
+            if (is_valid_movement(head->velocity, new_velocity) && can_change_direction)
             {
-                Snake[SNAKE_FACE].velocity = (buder_vec2_t){0, GRID_SIZE};
-                Snake[SNAKE_FACE].enabled = false;
-            }
-
-            if (event->key == BUDER_KEY_LEFT && (Snake[SNAKE_FACE].velocity.x == 0) && Snake[SNAKE_FACE].enabled)
-            {
-                Snake[SNAKE_FACE].velocity = (buder_vec2_t){-GRID_SIZE, 0};
-                Snake[SNAKE_FACE].enabled = false;
-            }
-
-            if (event->key == BUDER_KEY_RIGHT && (Snake[SNAKE_FACE].velocity.x == 0) && Snake[SNAKE_FACE].enabled)
-            {
-                Snake[SNAKE_FACE].velocity = (buder_vec2_t){GRID_SIZE, 0};
-                Snake[SNAKE_FACE].enabled = false;
+                head->velocity = new_velocity;
+                head->enabled = false;
             }
         }
     }
@@ -227,4 +255,5 @@ void bwindow_event(buder_t *buder, const buder_event_t *event)
 
 void bwindow_shutdown(void)
 {
+    // Liberar recursos si es necesario
 }

@@ -239,13 +239,19 @@ typedef struct buder_vec2_t
     float y;
 } buder_vec2_t;
 
-typedef struct buder_image_t
+typedef struct buder_texture_t
 {
     uint32_t id;
     uint32_t sampler;
     int width;
     int height;
-} buder_image_t;
+} buder_texture_t;
+
+typedef struct buder_font_t
+{
+    int font;
+    uint8_t font_data[256 * 1024];
+} buder_font_t;
 
 typedef struct buder_event_t
 {
@@ -274,18 +280,26 @@ void buder_scale(float x, float y);
 void buder_begin_transform();
 void buder_end_transform();
 
-buder_image_t buder_load_texture(const char *path);
-void buder_texture_free(buder_image_t texture);
+buder_texture_t buder_load_texture(const char *path);
+void buder_texture_free(buder_texture_t texture);
+
+buder_font_t buder_load_font(const char *filename);
 
 void buder_draw_rect(float x, float y, float w, float h, buder_color_t fill_color, buder_color_t outline_color, float outline_thickness, int layer_index);
 void buder_draw_line(float x0, float y0, float x1, float y1, float thickness, buder_color_t color, int layer_index);
 void buder_draw_circle(float x, float y, float radius, buder_color_t fill_color, buder_color_t outline_color, float outline_thickness, int layer_index);
 void buder_draw_triangle(float x0, float y0, float x1, float y1, float x2, float y2, buder_color_t color, int layer_index);
-void buder_draw_text(const char *text, float x, float y, buder_color_t color, int layer_index);
-void buder_draw_texture(buder_image_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, int layer_index);
+void buder_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, int layer_index);
+
+void buder_draw_text(buder_font_t font, const char *text, float x, float y, float font_size, buder_vec2_t origin, buder_color_t color, int layer_index);
+int buder_text_measure(buder_font_t font, const char *text, float font_size);
 
 void buder_play_sound(const char *audio_path);
 
 int buder_random_int(int min, int max);
+
+char *buder_string_format(const char *str, ...);
+const char *buder_file_name_get(const char *filePath);
+char *buder_file_name_without_ext(const char *filepath);
 
 #endif // BUDER_H

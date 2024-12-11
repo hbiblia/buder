@@ -4,6 +4,7 @@
 // ---------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #define SOKOL_IMPL
@@ -11,8 +12,9 @@
 
 #define SOKOL_LOG_IMPL
 #include "libraries/sokol/sokol_log.h"
-#define SOKOL_DEBUGTEXT_IMPL
-#include "libraries/sokol/sokol_debugtext.h"
+
+#define SOKOL_FETCH_IMPL
+#include "libraries/sokol/sokol_fetch.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "libraries/stb/stb_image.h"
@@ -20,12 +22,24 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "libraries/miniaudio/miniaudio.h"
 
-#define NUM_FONTS (3)
-#define FONT_KC854 (0)
-#define FONT_C64 (1)
-#define FONT_ORIC (2)
+#define FONTSTASH_IMPLEMENTATION
+#if defined(_MSC_VER)
+#pragma warning(disable : 4996) // strncpy use in fontstash.h
+#endif
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+#include "libraries/fontstash/fontstash.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+#define SOKOL_FONTSTASH_IMPL
+#include "libraries/sokol/sokol_fontstash.h"
 
 static ma_engine audio_engine; // experimental
+static FONScontext *font_ctx;  // experimental
 
 void buder_init(buder_t *buder)
 {
@@ -37,14 +51,11 @@ void buder_init(buder_t *buder)
         .logger.func = slog_func,
     });
 
-    // temporal fonts
-    sdtx_setup(&(sdtx_desc_t){
-        .fonts = {
-            [FONT_KC854] = sdtx_font_kc854(),
-            [FONT_C64] = sdtx_font_c64(),
-            [FONT_ORIC] = sdtx_font_oric()},
-        .logger.func = slog_func,
-    });
+    // sfetch_setup(&(sfetch_desc_t){
+    //     .num_channels = 1,
+    //     .num_lanes = 1,
+    //     .logger.func = slog_func,
+    // });
 
     buder->pass_action = (sg_pass_action){
         .colors[0] = {
@@ -70,6 +81,9 @@ void buder_init(buder_t *buder)
         printf("Failed to initialize audio engine\n");
     }
 
+    // const int atlas_dim = round_pow2(512.0f * sapp_dpi_scale());
+    font_ctx = sfons_create(&(sfons_desc_t){.width = 512, .height = 512});
+
     srand(time(0));
 
     buder->layers = 1; // default layers
@@ -92,7 +106,6 @@ void buder_begin_frame(buder_t *buder)
 {
     sgl_defaults();
     sgl_load_pipeline(buder->pipeline);
-    sdtx_canvas(buder->width, buder->height);
 
     sgl_viewport(0, 0, buder->width, buder->height, true);
 
@@ -106,13 +119,14 @@ void buder_begin_frame(buder_t *buder)
 void buder_end_frame(buder_t *buder)
 {
     sgl_pop_matrix();
+
+    sfons_flush(font_ctx);
     sg_begin_pass(&(sg_pass){.action = buder->pass_action, .swapchain = {.width = buder->width, .height = buder->height}});
     for (int i = 0; i < buder->layers; i++)
     {
         sgl_draw_layer(i);
     }
     sgl_draw_layer(buder->layers);
-    sdtx_draw();
     sg_end_pass();
     sg_commit();
 }
@@ -127,14 +141,14 @@ void buder_shutdown(buder_t *buder)
 // ----------
 // load texture, font, audio, etc
 // ----------
-buder_image_t buder_load_texture(const char *path)
+buder_texture_t buder_load_texture(const char *path)
 {
     int width, height, channels;
     unsigned char *data = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
     if (!data)
     {
         printf("Failed to load texture: %s", path);
-        return (buder_image_t){0};
+        return (buder_texture_t){0};
     }
 
     sg_image img_id = sg_make_image(&(sg_image_desc){
@@ -156,13 +170,20 @@ buder_image_t buder_load_texture(const char *path)
 
     stbi_image_free(data);
 
-    return (buder_image_t){.id = img_id.id, .width = width, .height = height, .sampler = sampler_id.id};
+    return (buder_texture_t){.id = img_id.id, .width = width, .height = height, .sampler = sampler_id.id};
 }
 
-void buder_texture_free(buder_image_t texture)
+void buder_texture_free(buder_texture_t texture)
 {
     sg_destroy_image((sg_image){texture.id});
     sg_destroy_sampler((sg_sampler){texture.sampler});
+}
+
+buder_font_t buder_load_font(const char *filename)
+{
+    buder_font_t font_data = {0};
+    font_data.font = fonsAddFont(font_ctx, buder_file_name_without_ext(filename), filename);
+    return font_data;
 }
 
 // ----------
@@ -340,17 +361,7 @@ void buder_draw_triangle(float x0, float y0, float x1, float y1, float x2, float
     sgl_end();
 }
 
-void buder_draw_text(const char *text, float x, float y, buder_color_t color, int layer_index)
-{
-    // sgl_layer(layer_index);
-    sdtx_font(0);
-    sdtx_origin(1, 1);
-    sdtx_color3b(color.r, color.g, color.b);
-    sdtx_puts(text);
-    // sdtx_move(x, y);
-}
-
-void buder_draw_texture(buder_image_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, int layer_index)
+void buder_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, int layer_index)
 {
     src.w = (src.w == 0) ? texture.width : src.w;
     src.h = (src.h == 0) ? texture.height : src.h;
@@ -395,6 +406,38 @@ void buder_draw_texture(buder_image_t texture, buder_rect_t src, buder_rect_t ds
 }
 
 // ----------
+// text
+// ----------
+void buder_draw_text(buder_font_t font, const char *text, float x, float y, float font_size, buder_vec2_t origin, buder_color_t color, int layer_index)
+{
+    fonsClearState(font_ctx);
+    fonsSetFont(font_ctx, font.font);
+    fonsSetSize(font_ctx, font_size);
+    fonsSetColor(font_ctx, 0xFFFFFFFF);
+    int width = fonsTextBounds(font_ctx, 0, 0, text, 0, NULL);
+
+    sgl_layer(layer_index);
+    sgl_push_matrix();
+
+    sgl_translate(x, y, 0.0f);
+    // sgl_scale(scale.x, scale.y, 1.0f);
+    sgl_rotate(0.0f, 0.0f, 0.0f, 1.0f);
+    sgl_translate(-(width * origin.x), -origin.y, 0.0f);
+
+    fonsDrawText(font_ctx, 0, 0, text, 0);
+
+    sgl_pop_matrix();
+}
+
+int buder_text_measure(buder_font_t font, const char *text, float font_size)
+{
+    fonsClearState(font_ctx);
+    fonsSetFont(font_ctx, font.font);
+    fonsSetSize(font_ctx, font_size);
+    return fonsTextBounds(font_ctx, 0, 0, text, 0, NULL);
+}
+
+// ----------
 // audio
 // ----------
 
@@ -412,6 +455,107 @@ int buder_random_int(int min, int max)
     return min + rand() % (max - min + 1);
 }
 
+char *buder_string_format(const char *str, ...)
+{
+    if (str == NULL)
+    {
+        return NULL;
+    }
+
+    va_list args;
+    va_start(args, str);
+
+    int len = vsnprintf(NULL, 0, str, args);
+    va_end(args);
+
+    if (len < 0)
+    {
+        return NULL;
+    }
+
+    char *buffer = (char *)malloc((size_t)len + 1);
+    if (buffer == NULL)
+    {
+        return NULL;
+    }
+
+    va_start(args, str);
+    int written = vsnprintf(buffer, (size_t)len + 1, str, args);
+    va_end(args);
+
+    if (written < 0)
+    {
+        free(buffer);
+        return NULL;
+    }
+
+    return buffer;
+}
+
+static const char *buder_string_strpbrk(const char *s, const char *charset)
+{
+    const char *latestMatch = NULL;
+    const char *current;
+
+    if (s == NULL || charset == NULL)
+        return NULL;
+
+    while ((current = strpbrk(s, charset)) != NULL)
+    {
+        latestMatch = current;
+        s = current + 1;
+    }
+
+    return latestMatch;
+}
+
+const char *buder_file_name_get(const char *filePath)
+{
+    const char *fileName;
+
+    if (filePath == NULL)
+        return NULL;
+
+    fileName = buder_string_strpbrk(filePath, "\\/");
+
+    return (fileName == NULL) ? filePath : fileName + 1;
+}
+
+char *buder_file_name_without_ext(const char *filepath)
+{
+    const char *fileName;
+    char *result = NULL;
+    const char *dotPos;
+
+    if (filepath == NULL)
+        return NULL;
+
+    // Get the filename part
+    fileName = buder_file_name_get(filepath);
+    if (fileName == NULL)
+        return NULL;
+
+    // Allocate memory for the result
+    result = strdup(fileName);
+    if (result == NULL)
+        return NULL;
+
+    // Find last occurrence of '.'
+    dotPos = strrchr(result, '.');
+    if (dotPos != NULL)
+    {
+        // Truncate at the dot
+        *((char *)dotPos) = '\0';
+    }
+
+    return result;
+}
+
+// Optional: Memory cleanup function
+void buder_file_name_free(char *filename)
+{
+    free(filename);
+}
 // ----------
 // inputs
 // ----------

@@ -1,6 +1,6 @@
 #include "../src/buder.h"
 
-static buder_image_t gobu_texture;
+static buder_texture_t gobu_texture;
 static float angle = 0;
 
 void bwindow_init(buder_t *buder)

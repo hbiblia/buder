@@ -15,6 +15,15 @@
         "miniaudio.h": "c",
         "sokol_log.h": "c",
         "sokol_debugtext.h": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "sokol_gl.h": "c",
+        "sokol_fontstash.h": "c",
+        "fontstash.h": "c",
+        "sokol_fetch.h": "c",
+        "format": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "xstring": "c",
+        "xlocale": "c"
     }
 }
