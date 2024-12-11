@@ -1,2 +1,2 @@
 # buder
-Buder es una librería simple de renderizado 2D
+Buder es una biblioteca simple para escribir videojuegos 2d.

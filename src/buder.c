@@ -2,11 +2,30 @@
 // Buder es una librería simple de renderizado 2D
 // basada en sokol_gl.h
 // ---------------------------------------------------------
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
 #define SOKOL_IMPL
 #include "buder.h"
 
+#define SOKOL_LOG_IMPL
+#include "libraries/sokol/sokol_log.h"
+#define SOKOL_DEBUGTEXT_IMPL
+#include "libraries/sokol/sokol_debugtext.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "libraries/stb/stb_image.h"
+
+#define MINIAUDIO_IMPLEMENTATION
+#include "libraries/miniaudio/miniaudio.h"
+
+#define NUM_FONTS (3)
+#define FONT_KC854 (0)
+#define FONT_C64 (1)
+#define FONT_ORIC (2)
+
+static ma_engine audio_engine; // experimental
 
 void buder_init(buder_t *buder)
 {
@@ -15,6 +34,15 @@ void buder_init(buder_t *buder)
     });
 
     sgl_setup(&(sgl_desc_t){
+        .logger.func = slog_func,
+    });
+
+    // temporal fonts
+    sdtx_setup(&(sdtx_desc_t){
+        .fonts = {
+            [FONT_KC854] = sdtx_font_kc854(),
+            [FONT_C64] = sdtx_font_c64(),
+            [FONT_ORIC] = sdtx_font_oric()},
         .logger.func = slog_func,
     });
 
@@ -36,7 +64,17 @@ void buder_init(buder_t *buder)
         },
     });
 
+    ma_result result = ma_engine_init(NULL, &audio_engine);
+    if (result != MA_SUCCESS)
+    {
+        printf("Failed to initialize audio engine\n");
+    }
+
+    srand(time(0));
+
     buder->layers = 1; // default layers
+    buder->width = 800;
+    buder->height = 600;
 }
 
 void buder_set_stage_size(buder_t *buder, int width, int height)
@@ -54,6 +92,7 @@ void buder_begin_frame(buder_t *buder)
 {
     sgl_defaults();
     sgl_load_pipeline(buder->pipeline);
+    sdtx_canvas(buder->width, buder->height);
 
     sgl_viewport(0, 0, buder->width, buder->height, true);
 
@@ -73,12 +112,14 @@ void buder_end_frame(buder_t *buder)
         sgl_draw_layer(i);
     }
     sgl_draw_layer(buder->layers);
+    sdtx_draw();
     sg_end_pass();
     sg_commit();
 }
 
 void buder_shutdown(buder_t *buder)
 {
+    ma_engine_uninit(&audio_engine);
     sgl_shutdown();
     sg_shutdown();
 }
@@ -301,7 +342,12 @@ void buder_draw_triangle(float x0, float y0, float x1, float y1, float x2, float
 
 void buder_draw_text(const char *text, float x, float y, buder_color_t color, int layer_index)
 {
-    // TODO: Implement text rendering
+    // sgl_layer(layer_index);
+    sdtx_font(0);
+    sdtx_origin(1, 1);
+    sdtx_color3b(color.r, color.g, color.b);
+    sdtx_puts(text);
+    // sdtx_move(x, y);
 }
 
 void buder_draw_texture(buder_image_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, int layer_index)
@@ -316,9 +362,8 @@ void buder_draw_texture(buder_image_t texture, buder_rect_t src, buder_rect_t ds
 
     sgl_enable_texture();
     sgl_texture(
-        (sg_image){texture.id}, 
-        (sg_sampler){texture.sampler}
-    );
+        (sg_image){texture.id},
+        (sg_sampler){texture.sampler});
 
     // sgl_load_default_pipeline();
 
@@ -349,3 +394,28 @@ void buder_draw_texture(buder_image_t texture, buder_rect_t src, buder_rect_t ds
     sgl_disable_texture();
 }
 
+// ----------
+// audio
+// ----------
+
+void buder_play_sound(const char *audio)
+{
+    ma_engine_play_sound(&audio_engine, audio, NULL);
+}
+
+// ----------
+// utilities
+// ----------
+
+int buder_random_int(int min, int max)
+{
+    return min + rand() % (max - min + 1);
+}
+
+// ----------
+// inputs
+// ----------
+
+void buder_event_pool(buder_t *buder, const buder_event_t *event)
+{
+}

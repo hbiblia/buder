@@ -6,49 +6,43 @@
 #include "sokol_glue.h"
 
 static buder_t buder;
-static buder_image_t gobu_texture;
-static float angle = 0;
+
+void bwindow_init(buder_t *buder);
+void bwindow_frame(buder_t *buder, float delta);
+void bwindow_event(buder_t *buder, const buder_event_t *event);
+void bwindow_shutdown(void);
 
 static void init(void)
 {
     buder_init(&buder);
-    // buder_set_stage_color(&buder, (buder_color_t){245, 245, 245, 255});
-    gobu_texture = buder_load_texture("resources/gobu.png");
+    bwindow_init(&buder);
 }
 
 static void frame(void)
 {
-    angle += 3.0f * sapp_frame_duration();
-
     buder_set_stage_size(&buder, sapp_width(), sapp_height());
-    buder_begin_frame(&buder);
-    {
-        // Unos rectangulos de diferentes colores y tamaños, los borders son diferentes colores.
-        buder_draw_rect(100, 100, 100, 100, PINK, RED, 5, 0);
-        buder_draw_rect(200, 200, 100, 100, MAROON, PINK, 10, 0);
+    bwindow_frame(&buder, sapp_frame_duration());
+}
 
-        // Unas lineas cortas de diferentes colores
-        buder_draw_line(0, 0, 100, 100, 1, PINK, 0);
-        buder_draw_line(0, 0, 100, 200, 5, LIME, 0);
-
-        // Unos circulos de diferentes colores, , los borders son diferentes colores.
-        buder_draw_circle(500, 200, 50, GREEN, DARKGREEN, 5, 0);
-        buder_draw_circle(620, 200, 50, LIME, GREEN, 1, 0);
-
-        // Unos triangulos de diferentes colores [azul, rojo], uno del lado del otro.
-        buder_draw_triangle(500, 480, 600, 480, 550, 580, SKYBLUE, 0);
-        buder_draw_triangle(600, 480, 700, 480, 650, 580, BLUE, 0);
-
-        // mostrar una textura en la pantalla
-        buder_draw_texture(gobu_texture, (buder_rect_t){0, 0, 0, 0}, (buder_rect_t){380, 250, 0, 0},
-                           (buder_vec2_t){1, 1}, (buder_vec2_t){gobu_texture.width / 2, gobu_texture.height / 2}, angle, 0);
-    }
-    buder_end_frame(&buder);
+static void eventcb(const sapp_event *event)
+{
+    bwindow_event(&buder, &(const buder_event_t){
+        .mouse_x = event->mouse_x,
+        .mouse_y = event->mouse_y,
+        .mouse_dx = event->mouse_dx,
+        .mouse_dy = event->mouse_dy,
+        .scroll_x = event->scroll_x,
+        .scroll_y = event->scroll_y,
+        .type = (buder_event_type)event->type,
+        .key = event->key_code,
+        .char_code = event->char_code,
+        .mouse_button = (buder_mousebutton)event->mouse_button,
+    });
 }
 
 static void cleanup(void)
 {
-    buder_texture_free(gobu_texture);
+    bwindow_shutdown();
     buder_shutdown(&buder);
 }
 
@@ -60,10 +54,10 @@ sapp_desc sokol_main(int argc, char *argv[])
         .init_cb = init,
         .frame_cb = frame,
         .cleanup_cb = cleanup,
+        .event_cb = eventcb,
         .width = 800,
         .height = 600,
-        .window_title = "window example",
+        .window_title = "Example Buder + SokolApp",
         .icon.sokol_default = true,
-        .logger.func = slog_func,
     };
 }

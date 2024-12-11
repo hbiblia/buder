@@ -9,6 +9,12 @@
         "sokol_gfx.h": "c",
         "stb_image.h": "c",
         "sokol_app.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "sokol_glue.h": "c",
+        "cmath": "c",
+        "miniaudio.h": "c",
+        "sokol_log.h": "c",
+        "sokol_debugtext.h": "c",
+        "math.h": "c"
     }
 }
