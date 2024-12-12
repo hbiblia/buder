@@ -5,6 +5,8 @@
 #ifndef BUDER_H
 #define BUDER_H
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "libraries/sokol/sokol_gfx.h"
 #include "libraries/sokol/sokol_gl.h"
@@ -275,6 +277,8 @@ typedef struct buder_event_t
     float scroll_y;
 } buder_event_t;
 
+#define BUDER_RECT_ZERO (buder_rect_t){0, 0, 0, 0}
+
 void buder_init(buder_t *buder);
 void buder_set_stage_size(buder_t *buder, int width, int height);
 void buder_set_stage_color(buder_t *buder, buder_color_t color);
@@ -302,7 +306,7 @@ void buder_draw_line(float x0, float y0, float x1, float y1, float thickness, bu
 void buder_draw_circle(float x, float y, float radius, buder_color_t fill_color, buder_color_t outline_color, float outline_thickness, int layer_index);
 void buder_draw_triangle(float x0, float y0, float x1, float y1, float x2, float y2, buder_color_t color, int layer_index);
 void buder_draw_grid(int width, int height, int cell_size, buder_color_t color, int layer_index);
-void buder_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, int layer_index);
+void buder_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, buder_color_t tint, int layer_index);
 
 void buder_draw_text(buder_font_t font, const char *text, float x, float y, float font_size, buder_vec2_t origin, buder_color_t color, int layer_index);
 void buder_draw_textd(const char *text, float x, float y, float font_size, buder_color_t color, int layer_index);
@@ -317,5 +321,11 @@ int buder_random_int(int min, int max);
 char *buder_string_format(const char *str, ...);
 const char *buder_file_name_get(const char *filePath);
 char *buder_file_name_without_ext(const char *filepath);
+
+buder_vec2_t buder_get_mouse_position(void);
+void buder_set_mouse_position(float x, float y);
+
+bool buder_mouse_is_button_down(buder_mousebutton button);
+void buder_mouse_button_events(int mouse_button, int action);
 
 #endif // BUDER_H

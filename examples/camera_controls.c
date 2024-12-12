@@ -13,8 +13,6 @@ void bwindow_init(buder_t *buder)
 
     camera.zoom = 1.0f;
     camera.rotation = 0.0f;
-    // camera.offset = (buder_vec2_t){buder->width/2, buder->height/2};
-    // camera.target = (buder_vec2_t){player.x + 20.0f, player.y + 20.0f};
 
     int spacing = 0;
     for(int i = 0; i< MAX_BUILDINGS; i++)
@@ -53,11 +51,10 @@ void bwindow_frame(buder_t *buder, float delta)
         }
         buder_end_camera();
 
-        buder_draw_textd("SCREEN AREA", buder->width-120, 20, 20, RED, 0);
-
         buder_draw_rect(0,0, buder->width, buder->height, BLANK, RED, 10, 0);
         buder_draw_rect(10, 10, 250, 113, buder_color_fade(SKYBLUE, 0.5f), BLUE, 1.0f, 0);
 
+        buder_draw_textd("SCREEN AREA", buder->width-120, 20, 20, RED, 0);
         buder_draw_textd("Free 2d camera controls:", 20, 25, 15, BLACK, 0);
         buder_draw_textd("- Right/Left to move Offset", 40, 45, 15, DARKGRAY, 0);
         buder_draw_textd("- Mouse Wheel to Zoom in-out", 40, 65, 15, DARKGRAY, 0);

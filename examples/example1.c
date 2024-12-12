@@ -44,7 +44,7 @@ void bwindow_frame(buder_t *buder, float delta)
 
             // mostrar una textura en la pantalla
             buder_draw_texture(gobu_texture, (buder_rect_t){0, 0, 0, 0}, (buder_rect_t){380, 250, 0, 0},
-                               (buder_vec2_t){1, 1}, (buder_vec2_t){gobu_texture.width / 2, gobu_texture.height / 2}, angle, 0);
+                               (buder_vec2_t){1, 1}, (buder_vec2_t){gobu_texture.width / 2, gobu_texture.height / 2}, angle, WHITE, 0);
         }
         buder_end_camera();
         

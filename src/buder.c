@@ -86,11 +86,11 @@ void buder_init(buder_t *buder)
     font_ctx = sfons_create(&(sfons_desc_t){.width = 512, .height = 512});
 
     // default font
-    fontDefault = buder_load_font("resources/Roboto-Regular.ttf");
+    fontDefault = buder_load_font("resources/PixelifySans-Regular.ttf");
 
     srand(time(0));
 
-    buder->layers = 1; // default layers
+    buder->layers = 2; // default layers
     buder->width = 800;
     buder->height = 600;
 }
@@ -114,6 +114,7 @@ void buder_begin_frame(buder_t *buder)
     sgl_load_pipeline(buder->pipeline);
     sgl_viewport(0, 0, buder->width, buder->height, true);
     sgl_matrix_mode_projection();
+    sgl_load_identity();
     sgl_push_matrix();
     sgl_ortho(0.0f, buder->width, buder->height, 0.0f, -1.0f, 1.0f);
 }
@@ -126,6 +127,7 @@ void buder_end_frame(buder_t *buder)
     sg_begin_pass(&(sg_pass){.action = buder->pass_action, .swapchain = {.width = buder->width, .height = buder->height}});
     for (int i = 0; i < buder->layers; i++)
         sgl_draw_layer(i);
+    sgl_draw();
     sg_end_pass();
     sg_commit();
 }
@@ -373,7 +375,7 @@ void buder_draw_triangle(float x0, float y0, float x1, float y1, float x2, float
     sgl_end();
 }
 
-void buder_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, int layer_index)
+void buder_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, buder_color_t tint, int layer_index)
 {
     src.w = (src.w == 0) ? texture.width : src.w;
     src.h = (src.h == 0) ? texture.height : src.h;
@@ -403,7 +405,7 @@ void buder_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t 
     sgl_translate(-origin.x, -origin.y, 0.0f);
 
     sgl_begin_quads();
-    sgl_c4f(1.0f, 1.0f, 1.0f, 1.0f);
+    sgl_c4b(tint.r, tint.g, tint.b, tint.a);
     {
         sgl_v2f_t2f(0.0f, 0.0f, tex_left, tex_top);
         sgl_v2f_t2f(0.0f, dst.h, tex_left, tex_bottom);
@@ -606,15 +608,49 @@ char *buder_file_name_without_ext(const char *filepath)
     return result;
 }
 
-// Optional: Memory cleanup function
-void buder_file_name_free(char *filename)
-{
-    free(filename);
-}
 // ----------
 // inputs
 // ----------
 
+static buder_vec2_t buder_mouse_position = {0.0f, 0.0f};
+static bool buder_mouse_buttons[BUDER_MOUSEBUTTON_INVALID] = {0};
+
 void buder_event_pool(buder_t *buder, const buder_event_t *event)
 {
+}
+
+buder_vec2_t buder_get_mouse_position(void)
+{
+    return buder_mouse_position;
+}
+
+void buder_set_mouse_position(float x, float y)
+{
+    buder_mouse_position = (buder_vec2_t){x, y};
+}
+
+bool buder_mouse_is_button_down(buder_mousebutton button)
+{
+    return buder_mouse_buttons[button];
+}
+
+void buder_mouse_button_events(int mouse_button, int action)
+{
+    if (mouse_button == BUDER_MOUSEBUTTON_LEFT || 
+        mouse_button == BUDER_MOUSEBUTTON_RIGHT || 
+        mouse_button == BUDER_MOUSEBUTTON_MIDDLE) {
+        
+        switch (action) {
+            case BUDER_EVENT_MOUSE_DOWN:
+                buder_mouse_buttons[mouse_button] = true;
+                break;
+            
+            case BUDER_EVENT_MOUSE_UP:
+                buder_mouse_buttons[mouse_button] = false;
+                break;
+            
+            default:
+                break;
+        }
+    }
 }
