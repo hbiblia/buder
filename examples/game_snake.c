@@ -75,7 +75,7 @@ static void initialize_snake(int width, int height)
     frame_counter = 0;
 }
 
-static void update_snake_position(int width, int height)
+static void update_snake_position(int width, int height, float delta)
 {
     for (int i = 0; i < snake_length; i++)
     {
@@ -112,7 +112,7 @@ static void update_snake_position(int width, int height)
         }
     }
 
-    frame_counter++;
+    frame_counter += 1;
 }
 
 static void update_food(int width, int height)
@@ -173,7 +173,7 @@ void bwindow_init(buder_t *buder)
 
 void bwindow_frame(buder_t *buder, float delta)
 {
-    update_snake_position(buder->width, buder->height);
+    update_snake_position(buder->width, buder->height, delta);
     update_food(buder->width, buder->height);
 
     buder_begin_frame(buder);

@@ -1,0 +1,1 @@
+option('renderer_selected', type : 'string', value : 'glcore')

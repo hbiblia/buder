@@ -259,7 +259,6 @@ typedef struct buder_texture_t
 typedef struct buder_font_t
 {
     int font;
-    uint8_t font_data[256 * 1024];
 } buder_font_t;
 
 typedef struct buder_event_t
@@ -289,7 +288,7 @@ void buder_scale(float x, float y);
 void buder_begin_transform();
 void buder_end_transform();
 
-void buder_begin_camera(buder_t *buder, buder_camera_t camera);
+void buder_begin_camera(buder_camera_t camera);
 void buder_end_camera(void);
 
 buder_texture_t buder_load_texture(const char *path);
@@ -306,9 +305,12 @@ void buder_draw_grid(int width, int height, int cell_size, buder_color_t color, 
 void buder_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, int layer_index);
 
 void buder_draw_text(buder_font_t font, const char *text, float x, float y, float font_size, buder_vec2_t origin, buder_color_t color, int layer_index);
+void buder_draw_textd(const char *text, float x, float y, float font_size, buder_color_t color, int layer_index);
 int buder_text_measure(buder_font_t font, const char *text, float font_size);
 
 void buder_play_sound(const char *audio_path);
+
+buder_color_t buder_color_fade(buder_color_t color, float alpha);
 
 int buder_random_int(int min, int max);
 char *buder_string_format(const char *str, ...);

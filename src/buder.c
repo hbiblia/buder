@@ -40,6 +40,7 @@
 
 static ma_engine audio_engine; // experimental
 static FONScontext *font_ctx;  // experimental
+static buder_font_t fontDefault;  // experimental
 
 void buder_init(buder_t *buder)
 {
@@ -84,6 +85,9 @@ void buder_init(buder_t *buder)
     // const int atlas_dim = round_pow2(512.0f * sapp_dpi_scale());
     font_ctx = sfons_create(&(sfons_desc_t){.width = 512, .height = 512});
 
+    // default font
+    fontDefault = buder_load_font("resources/Roboto-Regular.ttf");
+
     srand(time(0));
 
     buder->layers = 1; // default layers
@@ -104,16 +108,16 @@ void buder_set_stage_color(buder_t *buder, buder_color_t color)
 
 void buder_begin_frame(buder_t *buder)
 {
+    // float ratio = buder->width / (float)buder->height;
+
     sgl_defaults();
     sgl_load_pipeline(buder->pipeline);
-
-    sgl_viewport(0, 0, buder->width, buder->height, true);
-
+    // sgl_viewport(0, 0, buder->width, buder->height, true);
     sgl_matrix_mode_projection();
-    sgl_ortho(0.0f, (float)buder->width, (float)buder->height, 0.0f, -1.0f, 1.0f);
-
-    sgl_matrix_mode_modelview();
     sgl_push_matrix();
+    sgl_ortho(0.0f, buder->width, buder->height, 0.0f, -1.0f, 1.0f);
+    // sgl_load_identity();
+    // sgl_matrix_mode_modelview();
 }
 
 void buder_end_frame(buder_t *buder)
@@ -224,17 +228,17 @@ void buder_end_transform()
 // ----------
 // camera 2d: offset, target, rotation, zoom
 // ----------
-void buder_begin_camera(buder_t *buder, buder_camera_t camera)
+void buder_begin_camera(buder_camera_t camera)
 {
-    sgl_push_matrix();
-    sgl_translate(camera.offset.x, camera.offset.y, 0.0f);
-    sgl_rotate(camera.rotation, 0.0f, 0.0f, 1.0f);
-    sgl_scale(camera.zoom, camera.zoom, 1.0f);
+    // sgl_push_matrix();
+    // sgl_translate(camera.offset.x, camera.offset.y, 0.0f);
+    // sgl_rotate(camera.rotation, 0.0f, 0.0f, 1.0f);
+    // sgl_scale(camera.zoom, camera.zoom, 1.0f);
 }
 
 void buder_end_camera(void)
 {
-    sgl_pop_matrix();
+    // sgl_pop_matrix();
 }
 
 // ----------
@@ -242,36 +246,26 @@ void buder_end_camera(void)
 // ----------
 void buder_draw_rect(float x, float y, float w, float h, buder_color_t fill_color, buder_color_t outline_color, float outline_thickness, int layer_index)
 {
-    sgl_layer(layer_index);
-    sgl_begin_quads();
-
-    // If outline_thickness is 0 or negative, just draw a solid filled rectangle
-    if (outline_thickness <= 0)
-    {
+    // Dibujar fill si no es completamente transparente
+    if (fill_color.a > 0) {
+        sgl_layer(layer_index);
+        sgl_begin_quads();
         sgl_c4b(fill_color.r, fill_color.g, fill_color.b, fill_color.a);
         sgl_v2f(x, y);
         sgl_v2f(x + w, y);
         sgl_v2f(x + w, y + h);
         sgl_v2f(x, y + h);
         sgl_end();
-        return;
     }
 
-    // Draw outer rectangle (outline)
-    sgl_c4b(outline_color.r, outline_color.g, outline_color.b, outline_color.a);
-    sgl_v2f(x, y);
-    sgl_v2f(x + w, y);
-    sgl_v2f(x + w, y + h);
-    sgl_v2f(x, y + h);
-
-    // Draw inner rectangle (fill)
-    sgl_c4b(fill_color.r, fill_color.g, fill_color.b, fill_color.a);
-    sgl_v2f(x + outline_thickness, y + outline_thickness);
-    sgl_v2f(x + w - outline_thickness, y + outline_thickness);
-    sgl_v2f(x + w - outline_thickness, y + h - outline_thickness);
-    sgl_v2f(x + outline_thickness, y + h - outline_thickness);
-
-    sgl_end();
+    // Línea superior
+    if (outline_thickness > 0) {
+        float spacing_clip = outline_thickness / 2.0f;
+        buder_draw_line(x-spacing_clip, y, x + w + spacing_clip, y, outline_thickness, outline_color, layer_index);
+        buder_draw_line(x + w, y, x + w, y + h, outline_thickness, outline_color, layer_index);
+        buder_draw_line(x + w + spacing_clip, y + h, x - spacing_clip, y + h, outline_thickness, outline_color, layer_index);
+        buder_draw_line(x, y + h, x, y, outline_thickness, outline_color, layer_index);
+    }
 }
 
 void buder_draw_line(float x0, float y0, float x1, float y1, float thickness, buder_color_t color, int layer_index)
@@ -456,7 +450,7 @@ void buder_draw_text(buder_font_t font, const char *text, float x, float y, floa
     fonsClearState(font_ctx);
     fonsSetFont(font_ctx, font.font);
     fonsSetSize(font_ctx, font_size);
-    fonsSetColor(font_ctx, 0xFFFFFFFF);
+    fonsSetColor(font_ctx, sfons_rgba(color.r, color.g, color.b, color.a));
     int width = fonsTextBounds(font_ctx, 0, 0, text, 0, NULL);
 
     sgl_layer(layer_index);
@@ -472,6 +466,11 @@ void buder_draw_text(buder_font_t font, const char *text, float x, float y, floa
     sgl_pop_matrix();
 }
 
+void buder_draw_textd(const char *text, float x, float y, float font_size, buder_color_t color, int layer_index)
+{
+    buder_draw_text(fontDefault, text, x, y, font_size, (buder_vec2_t){0.0f, 0.0f}, color,layer_index);
+}
+
 int buder_text_measure(buder_font_t font, const char *text, float font_size)
 {
     fonsClearState(font_ctx);
@@ -483,16 +482,24 @@ int buder_text_measure(buder_font_t font, const char *text, float font_size)
 // ----------
 // audio
 // ----------
-
 void buder_play_sound(const char *audio)
 {
     ma_engine_play_sound(&audio_engine, audio, NULL);
 }
 
 // ----------
+// color
+// ----------
+buder_color_t buder_color_fade(buder_color_t color, float alpha)
+{
+    if (alpha < 0.0f) alpha = 0.0f;
+    if (alpha > 1.0f) alpha = 1.0f;
+    return (buder_color_t){color.r, color.g, color.b, (uint8_t)(color.a * alpha)};
+}
+
+// ----------
 // utilities
 // ----------
-
 int buder_random_int(int min, int max)
 {
     return min + rand() % (max - min + 1);

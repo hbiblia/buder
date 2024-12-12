@@ -24,6 +24,7 @@
         "initializer_list": "c",
         "utility": "c",
         "xstring": "c",
-        "xlocale": "c"
+        "xlocale": "c",
+        "ios": "c"
     }
 }

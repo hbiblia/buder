@@ -19,10 +19,9 @@ void bwindow_frame(buder_t *buder, float delta)
     // zoom sube y baja
     camera.zoom = 1.0f + sinf(angle) * 0.05f;
 
-    buder_set_stage_size(buder, buder->width, buder->height);
     buder_begin_frame(buder);
     {
-        buder_begin_camera(buder, camera);
+        buder_begin_camera(camera);
         {
             // Unos rectangulos de diferentes colores y tamaños, los borders son diferentes colores.
             buder_draw_rect(100, 100, 100, 100, PINK, RED, 5, 0);
@@ -45,6 +44,7 @@ void bwindow_frame(buder_t *buder, float delta)
                                (buder_vec2_t){1, 1}, (buder_vec2_t){gobu_texture.width / 2, gobu_texture.height / 2}, angle, 0);
         }
         buder_end_camera();
+        
         // Unos textos de diferentes colores y tamaños
         buder_draw_text(fontDefault, "Gobu2d", 120, 40, 20, (buder_vec2_t){0.0f, 0.0f}, RED, 0);
         buder_draw_text(fontDefault, "BuderLibs", 120, 70, 40, (buder_vec2_t){0.0f, 0.0f}, GREEN, 0);
