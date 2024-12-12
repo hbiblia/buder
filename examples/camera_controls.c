@@ -13,8 +13,8 @@ void bwindow_init(buder_t *buder)
 
     camera.zoom = 1.0f;
     camera.rotation = 0.0f;
-    camera.offset = (buder_vec2_t){buder->width/2, buder->height/2};
-    camera.target = (buder_vec2_t){player.x + 20.0f, player.y + 20.0f};
+    // camera.offset = (buder_vec2_t){buder->width/2, buder->height/2};
+    // camera.target = (buder_vec2_t){player.x + 20.0f, player.y + 20.0f};
 
     int spacing = 0;
     for(int i = 0; i< MAX_BUILDINGS; i++)
@@ -32,6 +32,9 @@ void bwindow_init(buder_t *buder)
 
 void bwindow_frame(buder_t *buder, float delta)
 {
+    camera.offset = (buder_vec2_t){buder->width/2, buder->height/2};
+    camera.target = (buder_vec2_t){player.x + 20.0f, player.y + 20.0f};
+    
     buder_begin_frame(buder);
     {
         buder_begin_camera(camera);
@@ -68,4 +71,37 @@ void bwindow_shutdown(void)
 {
 }
 
-void bwindow_event(buder_t *buder, const buder_event_t *event) {}
+void bwindow_event(buder_t *buder, const buder_event_t *event)
+{
+    if(event->type == BUDER_EVENT_KEY_DOWN)
+    {
+        if(event->key == BUDER_KEY_RIGHT)
+        {
+            player.x += 2;
+        }
+        else if(event->key == BUDER_KEY_LEFT)
+        {
+            player.x -= 2;
+        }
+
+        if(event->key == BUDER_KEY_A)
+        {
+            camera.rotation++;
+        }
+        else if(event->key == BUDER_KEY_S)
+        {
+            camera.rotation--;
+        }
+
+        if(event->key == BUDER_KEY_R)
+        {
+            camera.zoom = 1.0f;
+            camera.rotation = 0.0f;
+        }
+    }
+    else if(event->type == BUDER_EVENT_MOUSE_SCROLL)
+    {
+        camera.zoom += event->scroll_y * 0.005f;
+        camera.zoom = buder_math_clamp(camera.zoom, 0.1f, 3.0f);
+    }
+}

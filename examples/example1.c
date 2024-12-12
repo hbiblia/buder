@@ -21,11 +21,11 @@ void bwindow_frame(buder_t *buder, float delta)
 
     buder_begin_frame(buder);
     {
+        // Grid de 20x20
+        buder_draw_grid(buder->width, buder->height, 20, GRIDBLACK, 0);
+        
         buder_begin_camera(camera);
         {
-            // Grid de 20x20
-            buder_draw_grid(buder->width, buder->height, 20, GRIDBLACK, 0);
-            
             // Unos rectangulos de diferentes colores y tamaños, los borders son diferentes colores.
             buder_draw_rect(100, 100, 100, 100, PINK, RED, 5, 0);
             buder_draw_rect(200, 200, 100, 100, MAROON, PINK, 10, 0);
@@ -50,7 +50,7 @@ void bwindow_frame(buder_t *buder, float delta)
         
         // Unos textos de diferentes colores y tamaños
         buder_draw_text(fontDefault, "Gobu2d", 120, 40, 20, (buder_vec2_t){0.0f, 0.0f}, RED, 0);
-        buder_draw_text(fontDefault, "BuderLibs", 120, 70, 40, (buder_vec2_t){0.0f, 0.0f}, GREEN, 0);
+        buder_draw_textd("BuderLibs", 120, 70, 40, GREEN, 0);
     }
     buder_end_frame(buder);
 }

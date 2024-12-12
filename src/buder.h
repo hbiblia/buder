@@ -312,6 +312,7 @@ void buder_play_sound(const char *audio_path);
 
 buder_color_t buder_color_fade(buder_color_t color, float alpha);
 
+float buder_math_clamp(float value, float min, float max);
 int buder_random_int(int min, int max);
 char *buder_string_format(const char *str, ...);
 const char *buder_file_name_get(const char *filePath);

@@ -108,16 +108,14 @@ void buder_set_stage_color(buder_t *buder, buder_color_t color)
 
 void buder_begin_frame(buder_t *buder)
 {
-    // float ratio = buder->width / (float)buder->height;
+    float ratio = buder->width / (float)buder->height;
 
     sgl_defaults();
     sgl_load_pipeline(buder->pipeline);
-    // sgl_viewport(0, 0, buder->width, buder->height, true);
+    sgl_viewport(0, 0, buder->width, buder->height, true);
     sgl_matrix_mode_projection();
     sgl_push_matrix();
     sgl_ortho(0.0f, buder->width, buder->height, 0.0f, -1.0f, 1.0f);
-    // sgl_load_identity();
-    // sgl_matrix_mode_modelview();
 }
 
 void buder_end_frame(buder_t *buder)
@@ -127,10 +125,7 @@ void buder_end_frame(buder_t *buder)
     sfons_flush(font_ctx);
     sg_begin_pass(&(sg_pass){.action = buder->pass_action, .swapchain = {.width = buder->width, .height = buder->height}});
     for (int i = 0; i < buder->layers; i++)
-    {
         sgl_draw_layer(i);
-    }
-    sgl_draw_layer(buder->layers);
     sg_end_pass();
     sg_commit();
 }
@@ -230,15 +225,16 @@ void buder_end_transform()
 // ----------
 void buder_begin_camera(buder_camera_t camera)
 {
-    // sgl_push_matrix();
-    // sgl_translate(camera.offset.x, camera.offset.y, 0.0f);
-    // sgl_rotate(camera.rotation, 0.0f, 0.0f, 1.0f);
-    // sgl_scale(camera.zoom, camera.zoom, 1.0f);
+    sgl_push_matrix();
+    sgl_translate(camera.offset.x, camera.offset.y, 0.0f);
+    sgl_rotate(sgl_rad(camera.rotation), 0.0f, 0.0f, 1.0f);
+    sgl_scale(camera.zoom, camera.zoom, 1.0f);
+    sgl_translate(-camera.target.x, -camera.target.y, 0.0f);
 }
 
 void buder_end_camera(void)
 {
-    // sgl_pop_matrix();
+    sgl_pop_matrix();
 }
 
 // ----------
@@ -500,6 +496,15 @@ buder_color_t buder_color_fade(buder_color_t color, float alpha)
 // ----------
 // utilities
 // ----------
+float buder_math_clamp(float value, float min, float max)
+{
+    if (value < min)
+        return min;
+    if (value > max)
+        return max;
+    return value;
+}
+
 int buder_random_int(int min, int max)
 {
     return min + rand() % (max - min + 1);
