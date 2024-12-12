@@ -60,7 +60,7 @@ static void initialize_snake(int width, int height)
     for (int i = 0; i < SNAKE_MAX_LENGTH; i++)
     {
         snake_body[i] = (Actor){
-            .position = {width / 2, height / 2},
+            .position = {(width / GRID_SIZE / 2) * GRID_SIZE, (height / GRID_SIZE / 2) * GRID_SIZE},
             .velocity = {0, 0},
             .size = {GRID_SIZE, GRID_SIZE},
             .color = (i == 0) ? BLUE : DARKBLUE,
@@ -218,6 +218,7 @@ void bwindow_event(buder_t *buder, const buder_event_t *event)
         {
             game_over = false;
             initialize_snake(buder->width, buder->height);
+            place_food(buder->width, buder->height);
         }
         else if (!game_over)
         {

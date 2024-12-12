@@ -23,6 +23,9 @@ void bwindow_frame(buder_t *buder, float delta)
     {
         buder_begin_camera(camera);
         {
+            // Grid de 20x20
+            buder_draw_grid(buder->width, buder->height, 20, GRIDBLACK, 0);
+            
             // Unos rectangulos de diferentes colores y tamaños, los borders son diferentes colores.
             buder_draw_rect(100, 100, 100, 100, PINK, RED, 5, 0);
             buder_draw_rect(200, 200, 100, 100, MAROON, PINK, 10, 0);
