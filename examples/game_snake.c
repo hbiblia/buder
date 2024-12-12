@@ -185,26 +185,27 @@ void bwindow_frame(buder_t *buder, float delta)
 
             buder_draw_text(game_font, "Game Over",
                             center_x, center_y, 30,
-                            (buder_vec2_t){0.5f, 0.0f}, RED, 1);
+                            (buder_vec2_t){0.5f, 0.0f}, RED, 0);
 
             buder_draw_text(game_font, "Press Space to Restart",
                             center_x, center_y + 20, 20,
-                            (buder_vec2_t){0.5f, 0.0f}, RED, 1);
+                            (buder_vec2_t){0.5f, 0.0f}, RED, 0);
         }
         else
         {
+            buder_draw_grid(buder->width, buder->height, GRID_SIZE, GRIDBLACK, 0);
+
             buder_draw_text(game_font, buder_string_format("Score: %d", snake_score), 10, 20, 20,
-                            (buder_vec2_t){0.0f, 0.0f}, WHITE, 1);
+                            (buder_vec2_t){0.0f, 0.0f}, WHITE, 0);
 
             buder_draw_text(game_font,
                             "Move the Snake Up, Down, Left, or Right.",
                             buder->width / 2,
                             buder->height - 30, 20,
-                            (buder_vec2_t){0.5f, 0.0f}, WHITE, 1);
+                            (buder_vec2_t){0.5f, 0.0f}, WHITE, 0);
 
             draw_food();
             draw_snake();
-            buder_draw_grid(buder->width, buder->height, GRID_SIZE, GRIDBLACK, 0);
         }
     }
     buder_end_frame(buder);

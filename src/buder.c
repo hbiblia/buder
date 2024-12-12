@@ -127,7 +127,7 @@ void buder_end_frame(buder_t *buder)
     sg_begin_pass(&(sg_pass){.action = buder->pass_action, .swapchain = {.width = buder->width, .height = buder->height}});
     for (int i = 0; i < buder->layers; i++)
         sgl_draw_layer(i);
-    sgl_draw();
+    // sgl_draw();
     sg_end_pass();
     sg_commit();
 }
