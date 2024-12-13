@@ -68,9 +68,9 @@ void bwindow_frame(buder_t *buder, float delta)
     }
 
     bdr_draw_rect(0, 0, buder->width, 40, BLACK, BLANK, 0, 0);
-    bdr_draw_text(bdr_string_format("FPS: %d", 0), 10, 30, 30, DARKGREEN, 0); // proximamente buder_get_fps()
-    bdr_draw_text(bdr_string_format("bunnies: %i", gobuesCount), 140, 30, 30, GREEN, 0);
-    bdr_draw_text(bdr_string_format("batched draw calls: %i", 1 + gobuesCount / MAX_BATCH_ELEMENTS), 340, 30, 30, MAROON, 0);
+    bdr_draw_text(bdr_string_format("FPS: %d", 0), 10, 25, 25, DARKGREEN, 0); // proximamente buder_get_fps()
+    bdr_draw_text(bdr_string_format("bunnies: %i", gobuesCount), 135, 25, 25, GREEN, 0);
+    bdr_draw_text(bdr_string_format("batched draw calls: %i", 1 + gobuesCount / MAX_BATCH_ELEMENTS), 345, 25, 25, MAROON, 0);
 
     bdr_viewport_present(buder);
 }

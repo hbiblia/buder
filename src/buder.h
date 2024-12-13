@@ -258,7 +258,7 @@ typedef struct buder_texture_t
 
 typedef struct buder_font_t
 {
-    int font;
+    int id;
 } buder_font_t;
 
 typedef struct buder_sound_t
@@ -286,10 +286,11 @@ typedef struct buder_t
 {
     sg_pass_action pass_action;
     sgl_pipeline pipeline;
+    // struct window config
     int width;
     int height;
-    uint8_t layers;
-    // struct input
+    uint8_t layers; // experimental
+    // struct input config
     struct {
         bool mouse_buttons[BUDER_MOUSEBUTTON_INVALID];
         int _current_key_state[MAX_KEYBOARD_KEYS];

@@ -88,7 +88,7 @@ void buder_init(buder_t *buder, int width, int height)
     font_ctx = sfons_create(&(sfons_desc_t){.width = 512, .height = 512});
 
     // default font
-    fontDefault = bdr_load_font("resources/PixelifySans-Regular.ttf");
+    fontDefault = bdr_load_font("resources/Silkscreen-Regular.ttf");
 
     srand(time(0));
 
@@ -264,13 +264,13 @@ void bdr_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t ds
 buder_font_t bdr_load_font(const char *filename)
 {
     buder_font_t font_data = {0};
-    font_data.font = fonsAddFont(font_ctx, bdr_file_name_without_ext(filename), filename);
+    font_data.id = fonsAddFont(font_ctx, bdr_file_name_without_ext(filename), filename);
     return font_data;
 }
 
 void bdr_free_font(buder_font_t font)
 {
-    // fonsDeleteFont(font_ctx, font.font);
+    // fonsDeleteFont(font_ctx, font.id);
 }
 
 buder_font_t bdr_get_default_font(void)
@@ -281,7 +281,7 @@ buder_font_t bdr_get_default_font(void)
 void bdr_draw_text_pro(buder_font_t font, const char *text, float x, float y, float font_size, buder_vec2_t origin, buder_color_t color, int layer_index)
 {
     fonsClearState(font_ctx);
-    fonsSetFont(font_ctx, font.font);
+    fonsSetFont(font_ctx, font.id);
     fonsSetSize(font_ctx, font_size);
     fonsSetColor(font_ctx, bdr_color_to_uint(color));
     int width = fonsTextBounds(font_ctx, 0, 0, text, 0, NULL);
@@ -307,7 +307,7 @@ void bdr_draw_text(const char *text, float x, float y, float font_size, buder_co
 int bdr_text_measure(buder_font_t font, const char *text, float font_size)
 {
     fonsClearState(font_ctx);
-    fonsSetFont(font_ctx, font.font);
+    fonsSetFont(font_ctx, font.id);
     fonsSetSize(font_ctx, font_size);
     return fonsTextBounds(font_ctx, 0, 0, text, 0, NULL);
 }

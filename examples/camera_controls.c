@@ -84,12 +84,12 @@ void bwindow_frame(buder_t *buder, float delta)
     bdr_draw_rect(0, 0, buder->width, buder->height, BLANK, RED, 10, 0);
     bdr_draw_rect(10, 10, 250, 113, bdr_color_fade(SKYBLUE, 0.5f), BLUE, 1.0f, 0);
 
-    bdr_draw_text("SCREEN AREA", buder->width - 120, 20, 20, RED, 0);
-    bdr_draw_text("Free 2d camera controls:", 20, 25, 15, BLACK, 0);
-    bdr_draw_text("- Right/Left to move Offset", 40, 45, 15, DARKGRAY, 0);
-    bdr_draw_text("- Mouse Wheel to Zoom in-out", 40, 65, 15, DARKGRAY, 0);
-    bdr_draw_text("- A / S to Rotate", 40, 85, 15, DARKGRAY, 0);
-    bdr_draw_text("- R to reset Zoom and Rotation", 40, 105, 15, DARKGRAY, 0);
+    bdr_draw_text("SCREEN AREA", buder->width - 145, 20, 20, RED, 0);
+    bdr_draw_text("Free 2d camera controls:", 20, 25, 13, BLACK, 0);
+    bdr_draw_text("- Right/Left to move Offset", 30, 45, 13, DARKGRAY, 0);
+    bdr_draw_text("- Mouse Wheel to Zoom in-out", 30, 65, 13, DARKGRAY, 0);
+    bdr_draw_text("- A / S to Rotate", 30, 85, 13, DARKGRAY, 0);
+    bdr_draw_text("- R to reset Zoom and Rotation", 30, 105, 13, DARKGRAY, 0);
 
     bdr_viewport_present(buder);
 }

@@ -9,7 +9,7 @@ void bwindow_init(buder_t *buder)
 {
     // bdr_viewport_color(&buder, (buder_color_t){245, 245, 245, 255});
     gobu_texture = bdr_load_texture("resources/gobu.png");
-    fontDefault = bdr_load_font("resources/DotGothic16-Regular.ttf");
+    fontDefault = bdr_load_font("resources/Roboto-Regular.ttf");
 }
 
 void bwindow_frame(buder_t *buder, float delta)
