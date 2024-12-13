@@ -42,6 +42,8 @@ static ma_engine audio_engine;   // experimental
 static FONScontext *font_ctx;    // experimental
 static buder_font_t fontDefault; // experimental
 
+static void bdr_event_pool_end(buder_t *buder);
+
 void buder_init(buder_t *buder, int width, int height)
 {
     sg_setup(&(sg_desc){
@@ -127,6 +129,8 @@ void bdr_viewport_init(buder_t *buder)
 
 void bdr_viewport_present(buder_t *buder)
 {
+    bdr_event_pool_end(buder);
+
     sfons_flush(font_ctx);
     sg_begin_pass(&(sg_pass){.action = buder->pass_action, .swapchain = {.width = buder->width, .height = buder->height}});
     for (int i = 0; i < buder->layers; i++)
@@ -639,30 +643,97 @@ static bool buder_keys[BUDER_KEY_MENU] = {0};
 
 void bdr_event_pool(buder_t *buder, const buder_event_t *event)
 {
-    bdr_keyboard_events(buder, event->key, event->type);
-    bdr_mouse_set_buttons(buder, event->mouse_button, event->type);
-    bdr_mouse_set_position(buder, event->mouse_x, event->mouse_y);
-    bdr_mouse_set_wheel_move(buder, event->scroll_y);
+    bdr_event_keyboard_events(buder, event->key, event->type);
+    bdr_event_mouse_events(buder, event->mouse_button, event->type);
+    bdr_event_mouse_position(buder, event->mouse_x, event->mouse_y);
+    bdr_event_mouse_wheel(buder, event->scroll_x, event->scroll_y);
+
+    if (event->type == BUDER_EVENT_RESIZED) {
+        bdr_viewport_size(buder, event->width, event->height);
+    }
+}
+
+static void bdr_event_pool_end(buder_t *buder)
+{
+    // Update previous mouse wheel
+    buder->input._previous_mouse_wheel = buder->input._current_mouse_wheel;
+    buder->input._current_mouse_wheel = (buder_vec2_t){0.0f, 0.0f};
+
+    // Update previous mouse position
+    buder->input._previous_mouse_position = buder->input._current_mouse_position;
+
+    // keyboard previous state
+    for(int i = 0; i< MAX_KEYBOARD_KEYS; i++)
+    {
+        buder->input._previous_key_state[i] = buder->input._current_key_state[i];
+    }
+
+    // mouse previous state
+    for(int i = 0; i< MAX_MOUSE_BUTTONS; i++)
+    {
+        buder->input._previous_mouse_state[i] = buder->input._current_mouse_state[i];
+    }
+}
+
+void bdr_event_mouse_position(buder_t *buder, float x, float y)
+{
+    buder->input._current_mouse_position = (buder_vec2_t){x, y};
+}
+
+void bdr_event_mouse_wheel(buder_t *buder, float wheel_x, float wheel_y)
+{
+    buder->input._current_mouse_wheel = (buder_vec2_t){wheel_x, wheel_y};
+}
+
+void bdr_event_keyboard_events(buder_t *buder, int key, int action)
+{
+    switch (action)
+    {
+    case BUDER_EVENT_KEY_DOWN:
+        buder->input._current_key_state[key] = true;
+        break;
+    case BUDER_EVENT_KEY_UP:
+        buder->input._current_key_state[key] = false;
+        break;
+    default:
+        break;
+    }
+}
+
+void bdr_event_mouse_events(buder_t *buder, int mouse_button, int action)
+{
+    if (mouse_button == BUDER_MOUSEBUTTON_LEFT ||
+        mouse_button == BUDER_MOUSEBUTTON_RIGHT ||
+        mouse_button == BUDER_MOUSEBUTTON_MIDDLE)
+    {
+        switch (action)
+        {
+        case BUDER_EVENT_MOUSE_DOWN:
+            buder->input._current_mouse_state[mouse_button] = true;
+            break;
+
+        case BUDER_EVENT_MOUSE_UP:
+            buder->input._current_mouse_state[mouse_button] = false;
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 int bdr_mouse_x(buder_t *buder)
 {
-    return (int)buder->input.mouse_position.x;
+    return (int)buder->input._current_mouse_position.x;
 }
 
 int bdr_mouse_y(buder_t *buder)
 {
-    return (int)buder->input.mouse_position.y;
+    return (int)buder->input._current_mouse_position.y;
 }
 
 buder_vec2_t bdr_mouse_get_pos(buder_t *buder)
 {
-    return buder->input.mouse_position;
-}
-
-void bdr_mouse_set_position(buder_t *buder, float x, float y)
-{
-    buder->input.mouse_position = (buder_vec2_t){x, y};
+    return buder->input._current_mouse_position;
 }
 
 bool bdr_mouse_is_down(buder_t *buder, buder_mousebutton button)
@@ -693,35 +764,12 @@ bool bdr_mouse_is_released(buder_t *buder, buder_mousebutton button)
 
 float bdr_mouse_wheel_move(buder_t *buder)
 {
-    return buder->input.mouse_wheel;
-}
+    float result = 0.0f;
 
-void bdr_mouse_set_wheel_move(buder_t *buder, float value)
-{
-    buder->input.mouse_wheel = value;
-}
+    if(fabs(buder->input._current_mouse_wheel.x) > fabs(buder->input._current_mouse_wheel.y)) result = buder->input._current_mouse_wheel.x;
+    else result = buder->input._current_mouse_wheel.y;
 
-void bdr_mouse_set_buttons(buder_t *buder, int mouse_button, int action)
-{
-    if (mouse_button == BUDER_MOUSEBUTTON_LEFT ||
-        mouse_button == BUDER_MOUSEBUTTON_RIGHT ||
-        mouse_button == BUDER_MOUSEBUTTON_MIDDLE)
-    {
-
-        switch (action)
-        {
-        case BUDER_EVENT_MOUSE_DOWN:
-            buder->input._current_mouse_state[mouse_button] = true;
-            break;
-
-        case BUDER_EVENT_MOUSE_UP:
-            buder->input._current_mouse_state[mouse_button] = false;
-            break;
-
-        default:
-            break;
-        }
-    }
+    return result;
 }
 
 bool bdr_keyboard_is_up(buder_t *buder, buder_keyboard key)
@@ -750,18 +798,4 @@ bool bdr_keyboard_is_released(buder_t *buder, buder_keyboard key)
     return is_key_changed && is_key_up;
 }
 
-void bdr_keyboard_events(buder_t *buder, int key, int action)
-{
-    switch (action)
-    {
-    case BUDER_EVENT_KEY_DOWN:
-        buder->input._current_key_state[key] = true;
-        break;
-    case BUDER_EVENT_KEY_UP:
-        buder->input._current_key_state[key] = false;
-        break;
-    default:
-        break;
-    }
-}
 

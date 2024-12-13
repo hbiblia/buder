@@ -15,6 +15,9 @@
 #include "libraries/sokol/sokol_gfx.h"
 #include "libraries/sokol/sokol_gl.h"
 
+#define MAX_KEYBOARD_KEYS 512
+#define MAX_MOUSE_BUTTONS 3
+
 // Some Basic Colors
 #define GRIDBLACK    (buder_color_t){ 20, 20, 20, 255 }
 #define LIGHTGRAY   (buder_color_t){ 211, 211, 211, 255 } 
@@ -269,6 +272,8 @@ typedef struct buder_event_t
     buder_keyboard key;
     uint32_t char_code;
     buder_mousebutton mouse_button;
+    int width;
+    int height;
     float mouse_x;
     float mouse_y;
     float mouse_dx;
@@ -287,12 +292,14 @@ typedef struct buder_t
     // struct input
     struct {
         bool mouse_buttons[BUDER_MOUSEBUTTON_INVALID];
-        int _current_key_state[512];
-        int _previous_key_state[512];
-        int _current_mouse_state[3];
-        int _previous_mouse_state[3];
-        buder_vec2_t mouse_position;
-        float mouse_wheel;
+        int _current_key_state[MAX_KEYBOARD_KEYS];
+        int _previous_key_state[MAX_KEYBOARD_KEYS];
+        int _current_mouse_state[MAX_MOUSE_BUTTONS];
+        int _previous_mouse_state[MAX_MOUSE_BUTTONS];
+        buder_vec2_t _current_mouse_wheel;
+        buder_vec2_t _previous_mouse_wheel;
+        buder_vec2_t _current_mouse_position;
+        buder_vec2_t _previous_mouse_position;
     } input;
 } buder_t;
 
@@ -367,23 +374,23 @@ char *bdr_file_name_without_ext(const char *filepath);
 
 // MODULE INPUT AND EVENTS
 void bdr_event_pool(buder_t *buder, const buder_event_t *event);
+void bdr_event_mouse_position(buder_t *buder, float x, float y);
+void bdr_event_mouse_wheel(buder_t *buder, float wheel_x, float wheel_y);
+void bdr_event_keyboard_events(buder_t *buder, int key, int action);
+void bdr_event_mouse_events(buder_t *buder, int mouse_button, int action);
 
 int bdr_mouse_x(buder_t *buder);
 int bdr_mouse_y(buder_t *buder);
 buder_vec2_t bdr_mouse_get_pos(buder_t *buder);
-void bdr_mouse_set_position(buder_t *buder, float x, float y);
 bool bdr_mouse_is_down(buder_t *buder, buder_mousebutton button);
 bool bdr_mouse_is_up(buder_t *buder, buder_mousebutton button);
 bool bdr_mouse_is_pressed(buder_t *buder, buder_mousebutton button);
 bool bdr_mouse_is_released(buder_t *buder, buder_mousebutton button);
 float bdr_mouse_wheel_move(buder_t *buder);
-void bdr_mouse_set_wheel_move(buder_t *buder, float value);
-void bdr_mouse_set_buttons(buder_t *buder, int mouse_button, int action);
 
 bool bdr_keyboard_is_up(buder_t *buder, buder_keyboard key);
 bool bdr_keyboard_is_down(buder_t *buder, buder_keyboard key);
 bool bdr_keyboard_is_pressed(buder_t *buder, buder_keyboard key);
 bool bdr_keyboard_is_released(buder_t *buder, buder_keyboard key);
-void bdr_keyboard_events(buder_t *buder, int key, int action);
 
 #endif // BUDER_H

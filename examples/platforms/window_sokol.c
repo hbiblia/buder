@@ -26,6 +26,8 @@ static void frame(void)
 static void eventcb(const sapp_event *event)
 {
     bdr_event_pool(&buder, &(const buder_event_t){
+        .width = event->window_width,
+        .height = event->window_height,
         .mouse_x = event->mouse_x,
         .mouse_y = event->mouse_y,
         .mouse_dx = event->mouse_dx,
