@@ -329,7 +329,9 @@ void bdr_camera_end(void);
 // MODULO TEXTURE AND SPRITES
 buder_texture_t bdr_load_texture(const char *filename);
 void bdr_free_texture(buder_texture_t texture);
-void bdr_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, buder_color_t tint, int layer_index);
+void bdr_draw_texture_pro(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, buder_color_t tint, int layer_index);
+void bdr_draw_texture_rect(buder_texture_t texture, buder_rect_t src, buder_vec2_t position, buder_color_t tint, int layer_index);
+void bdr_draw_texture(buder_texture_t texture, buder_vec2_t position, buder_color_t tint, int layer_index);
 
 // MODULO FONTS y TEXT
 buder_font_t bdr_load_font(const char *filename);

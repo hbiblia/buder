@@ -63,8 +63,7 @@ void bwindow_frame(buder_t *buder, float delta)
 
     for (int i = 0; i < gobuesCount; i++)
     {
-        bdr_draw_texture(gobumark, BUDER_RECT_ZERO, (buder_rect_t){gobus[i].position.x, gobus[i].position.y, 0, 0},
-                           (buder_vec2_t){1, 1}, (buder_vec2_t){0.0f, 0.0f}, 0, gobus[i].color, 0);
+        bdr_draw_texture(gobumark,(buder_vec2_t){gobus[i].position.x, gobus[i].position.y}, gobus[i].color, 0);
     }
 
     bdr_draw_rect(0, 0, buder->width, 40, BLACK, BLANK, 0, 0);

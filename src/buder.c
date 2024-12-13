@@ -218,7 +218,7 @@ void bdr_free_texture(buder_texture_t texture)
     sg_destroy_sampler((sg_sampler){texture.sampler});
 }
 
-void bdr_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, buder_color_t tint, int layer_index)
+void bdr_draw_texture_pro(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, buder_color_t tint, int layer_index)
 {
     src.w = (src.w == 0) ? texture.width : src.w;
     src.h = (src.h == 0) ? texture.height : src.h;
@@ -258,6 +258,20 @@ void bdr_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t ds
     sgl_pop_matrix();
 
     sgl_disable_texture();
+}
+
+void bdr_draw_texture_rect(buder_texture_t texture, buder_rect_t src, buder_vec2_t position, buder_color_t tint, int layer_index)
+{
+    buder_rect_t dst = {position.x, position.y, fabsf(src.w), fabsf(src.h)};
+    buder_vec2_t scale = {1.0f, 1.0f};
+    buder_vec2_t origin = {0.0f, 0.0f};
+    bdr_draw_texture_pro(texture, src, dst, scale, origin, 0.0f, tint, layer_index);
+}
+
+void bdr_draw_texture(buder_texture_t texture, buder_vec2_t position, buder_color_t tint, int layer_index)
+{
+    buder_rect_t src = {0.0f, 0.0f, texture.width, texture.height};
+    bdr_draw_texture_rect(texture, src, position, tint, layer_index);
 }
 
 // MODULO FONTS y TEXT

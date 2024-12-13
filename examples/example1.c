@@ -41,8 +41,11 @@ void bwindow_frame(buder_t *buder, float delta)
         bdr_draw_triangle(600, 480, 700, 480, 650, 580, BLUE, 0);
 
         // mostrar una textura en la pantalla
-        bdr_draw_texture(gobu_texture, (buder_rect_t){0, 0, 0, 0}, (buder_rect_t){380, 250, 0, 0},
-                           (buder_vec2_t){1, 1}, (buder_vec2_t){gobu_texture.width / 2, gobu_texture.height / 2}, angle, WHITE, 0);
+        bdr_draw_texture(gobu_texture, (buder_vec2_t){380, 250}, WHITE, 0);
+        // bdr_draw_texture(gobu_texture, (buder_texture_desc){
+        //     .position = (buder_vec2_t){380, 250},
+        //     .angle = angle,
+        // });
     }
     bdr_camera_end();
 
