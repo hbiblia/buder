@@ -25,6 +25,8 @@
         "utility": "c",
         "xstring": "c",
         "xlocale": "c",
-        "ios": "c"
+        "ios": "c",
+        "iterator": "c",
+        "xmemory": "c"
     }
 }

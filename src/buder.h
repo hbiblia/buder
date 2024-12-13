@@ -7,6 +7,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <math.h>
 #include "libraries/sokol/sokol_gfx.h"
 #include "libraries/sokol/sokol_gl.h"
@@ -211,15 +215,6 @@ typedef enum buder_mousebutton
     BUDER_MOUSEBUTTON_INVALID = 3,
 } buder_mousebutton;
 
-typedef struct buder_t
-{
-    sg_pass_action pass_action;
-    sgl_pipeline pipeline;
-    int width;
-    int height;
-    uint8_t layers;
-} buder_t;
-
 typedef struct buder_color_t
 {
     uint8_t r;
@@ -263,6 +258,11 @@ typedef struct buder_font_t
     int font;
 } buder_font_t;
 
+typedef struct buder_sound_t
+{
+    uint32_t id;
+} buder_sound_t;
+
 typedef struct buder_event_t
 {
     buder_event_type type;
@@ -277,55 +277,113 @@ typedef struct buder_event_t
     float scroll_y;
 } buder_event_t;
 
+typedef struct buder_t
+{
+    sg_pass_action pass_action;
+    sgl_pipeline pipeline;
+    int width;
+    int height;
+    uint8_t layers;
+    // struct input
+    struct {
+        bool mouse_buttons[BUDER_MOUSEBUTTON_INVALID];
+        int _current_key_state[512];
+        int _previous_key_state[512];
+        int _current_mouse_state[3];
+        int _previous_mouse_state[3];
+        buder_vec2_t mouse_position;
+        float mouse_wheel;
+    } input;
+} buder_t;
+
 #define BUDER_RECT_ZERO (buder_rect_t){0, 0, 0, 0}
 
-void buder_init(buder_t *buder);
-void buder_set_stage_size(buder_t *buder, int width, int height);
-void buder_set_stage_color(buder_t *buder, buder_color_t color);
-void buder_begin_frame(buder_t *buder);
-void buder_end_frame(buder_t *buder);
+// MODULE CORE
+void buder_init(buder_t *buder, int width, int height);
 void buder_shutdown(buder_t *buder);
 
-void buder_translate(float x, float y);
-void buder_rotate(float angle);
-void buder_scale(float x, float y);
-void buder_begin_transform();
-void buder_end_transform();
+void bdr_viewport_size(buder_t *buder, int width, int height);
+void bdr_viewport_color(buder_t *buder, buder_color_t color);
 
-void buder_begin_camera(buder_camera_t camera);
-void buder_end_camera(void);
+void bdr_viewport_init(buder_t *buder);
+void bdr_viewport_present(buder_t *buder);
 
-buder_texture_t buder_load_texture(const char *path);
-void buder_free_texture(buder_texture_t texture);
+void bdr_transform_begin(void);
+void bdr_position(float x, float y);
+void bdr_scale(float x, float y);
+void bdr_angle(float angle);
+void bdr_transform_end();
 
-buder_font_t buder_load_font(const char *filename);
-void buder_free_font(buder_font_t font);
+// MODULE CAMERA
+void bdr_camera_begin(buder_camera_t camera);
+void bdr_camera_end(void);
 
-void buder_draw_rect(float x, float y, float w, float h, buder_color_t fill_color, buder_color_t outline_color, float outline_thickness, int layer_index);
-void buder_draw_line(float x0, float y0, float x1, float y1, float thickness, buder_color_t color, int layer_index);
-void buder_draw_circle(float x, float y, float radius, buder_color_t fill_color, buder_color_t outline_color, float outline_thickness, int layer_index);
-void buder_draw_triangle(float x0, float y0, float x1, float y1, float x2, float y2, buder_color_t color, int layer_index);
-void buder_draw_grid(int width, int height, int cell_size, buder_color_t color, int layer_index);
-void buder_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, buder_color_t tint, int layer_index);
+// MODULO TEXTURE AND SPRITES
+buder_texture_t bdr_load_texture(const char *filename);
+void bdr_free_texture(buder_texture_t texture);
+void bdr_draw_texture(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, buder_color_t tint, int layer_index);
 
-void buder_draw_text(buder_font_t font, const char *text, float x, float y, float font_size, buder_vec2_t origin, buder_color_t color, int layer_index);
-void buder_draw_textd(const char *text, float x, float y, float font_size, buder_color_t color, int layer_index);
-int buder_text_measure(buder_font_t font, const char *text, float font_size);
+// MODULO FONTS y TEXT
+buder_font_t bdr_load_font(const char *filename);
+void bdr_free_font(buder_font_t font);
+buder_font_t bdr_get_default_font(void);
+void bdr_draw_text_pro(buder_font_t font, const char *text, float x, float y, float font_size, buder_vec2_t origin, buder_color_t color, int layer_index);
+void bdr_draw_text(const char *text, float x, float y, float font_size, buder_color_t color, int layer_index);
+int bdr_text_measure(buder_font_t font, const char *text, float font_size);
 
-void buder_play_sound(const char *audio_path);
+// MODULE SHAPE
+void bdr_draw_rect(float x, float y, float w, float h, buder_color_t fill_color, buder_color_t outline_color, float outline_thickness, int layer_index);
+void bdr_draw_line(float x0, float y0, float x1, float y1, float thickness, buder_color_t color, int layer_index);
+void bdr_draw_circle(float x, float y, float radius, buder_color_t fill_color, buder_color_t outline_color, float outline_thickness, int layer_index);
+void bdr_draw_triangle(float x0, float y0, float x1, float y1, float x2, float y2, buder_color_t color, int layer_index);
+void bdr_draw_grid(int width, int height, int cell_size, buder_color_t color, int layer_index);
 
-buder_color_t buder_color_fade(buder_color_t color, float alpha);
+// MODULE AUDIO
+void bdr_play_sound(buder_sound_t sound);
+buder_sound_t bdr_load_sound(const char *filename);
+void bdr_free_sound(buder_sound_t sound);
+void bdr_pause_sound(buder_sound_t sound);
+void bdr_resume_sound(buder_sound_t sound);
+void bdr_stop_sound(buder_sound_t sound);
+void bdr_set_sound_volume(buder_sound_t sound, float volume);
+void bdr_set_sound_pitch(buder_sound_t sound, float pitch);
+void bdr_set_sound_loop(buder_sound_t sound, bool loop);
 
-float buder_math_clamp(float value, float min, float max);
-int buder_random_int(int min, int max);
-char *buder_string_format(const char *str, ...);
-const char *buder_file_name_get(const char *filePath);
-char *buder_file_name_without_ext(const char *filepath);
+// MODULE COLOR
+buder_color_t bdr_color_fade(buder_color_t color, float alpha);
+uint32_t bdr_color_to_uint(buder_color_t color);
 
-buder_vec2_t buder_get_mouse_position(void);
-void buder_set_mouse_position(float x, float y);
+// MODULE MATH
+float bdr_math_clamp(float value, float min, float max);
+int bdr_math_random_int(int min, int max);
 
-bool buder_mouse_is_button_down(buder_mousebutton button);
-void buder_mouse_button_events(int mouse_button, int action);
+// MODULE STRING
+char *bdr_string_format(const char *str, ...);
+const char *bdr_string_strpbrk(const char *s, const char *charset);
+
+// MODULE PATH, FILE
+const char *bdr_file_name_get(const char *filePath);
+char *bdr_file_name_without_ext(const char *filepath);
+
+// MODULE INPUT AND EVENTS
+void bdr_event_pool(buder_t *buder, const buder_event_t *event);
+
+int bdr_mouse_x(buder_t *buder);
+int bdr_mouse_y(buder_t *buder);
+buder_vec2_t bdr_mouse_get_pos(buder_t *buder);
+void bdr_mouse_set_position(buder_t *buder, float x, float y);
+bool bdr_mouse_is_down(buder_t *buder, buder_mousebutton button);
+bool bdr_mouse_is_up(buder_t *buder, buder_mousebutton button);
+bool bdr_mouse_is_pressed(buder_t *buder, buder_mousebutton button);
+bool bdr_mouse_is_released(buder_t *buder, buder_mousebutton button);
+float bdr_mouse_wheel_move(buder_t *buder);
+void bdr_mouse_set_wheel_move(buder_t *buder, float value);
+void bdr_mouse_set_buttons(buder_t *buder, int mouse_button, int action);
+
+bool bdr_keyboard_is_up(buder_t *buder, buder_keyboard key);
+bool bdr_keyboard_is_down(buder_t *buder, buder_keyboard key);
+bool bdr_keyboard_is_pressed(buder_t *buder, buder_keyboard key);
+bool bdr_keyboard_is_released(buder_t *buder, buder_keyboard key);
+void bdr_keyboard_events(buder_t *buder, int key, int action);
 
 #endif // BUDER_H

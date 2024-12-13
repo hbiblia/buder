@@ -15,9 +15,8 @@ typedef struct
     bool enabled;
 } Actor;
 
-static buder_font_t game_font;
-static Actor snake_body[SNAKE_MAX_LENGTH] = {0};
 static buder_vec2_t snake_trail[SNAKE_MAX_LENGTH] = {0};
+static Actor snake_body[SNAKE_MAX_LENGTH] = {0};
 static int snake_length = 1;
 static int frame_counter = 0;
 static int snake_score = 0;
@@ -48,8 +47,8 @@ static void place_food(int width, int height)
     do
     {
         food.position = (buder_vec2_t){
-            ((float)buder_random_int(0, (width / GRID_SIZE) - 1) * GRID_SIZE),
-            ((float)buder_random_int(0, (height / GRID_SIZE) - 1) * GRID_SIZE)};
+            ((float)bdr_math_random_int(0, (width / GRID_SIZE) - 1) * GRID_SIZE),
+            ((float)bdr_math_random_int(0, (height / GRID_SIZE) - 1) * GRID_SIZE)};
     } while (!is_position_valid(food.position, snake_body, snake_length));
 
     food.enabled = true;
@@ -131,7 +130,7 @@ static void update_food(int width, int height)
             snake_length++;
             snake_score++;
             food.enabled = false;
-            buder_play_sound("resources/fruit-hit.wav");
+            // bdr_play_sound("resources/fruit-hit.wav");
             break;
         }
     }
@@ -141,7 +140,7 @@ static void draw_snake(void)
 {
     for (int i = 0; i < snake_length; i++)
     {
-        buder_draw_rect(
+        bdr_draw_rect(
             snake_body[i].position.x,
             snake_body[i].position.y,
             snake_body[i].size.x,
@@ -153,7 +152,7 @@ static void draw_snake(void)
 
 static void draw_food(void)
 {
-    buder_draw_rect(
+    bdr_draw_rect(
         food.position.x,
         food.position.y,
         food.size.x,
@@ -164,7 +163,6 @@ static void draw_food(void)
 
 void bwindow_init(buder_t *buder)
 {
-    game_font = buder_load_font("resources/DotGothic16-Regular.ttf");
     initialize_snake(buder->width, buder->height);
 
     food.size = (buder_vec2_t){GRID_SIZE, GRID_SIZE};
@@ -173,87 +171,79 @@ void bwindow_init(buder_t *buder)
 
 void bwindow_frame(buder_t *buder, float delta)
 {
+    if (bdr_keyboard_is_down(buder, BUDER_KEY_SPACE) && game_over)
+    {
+        game_over = false;
+        initialize_snake(buder->width, buder->height);
+        place_food(buder->width, buder->height);
+    }
+    else if (!game_over)
+    {
+        Actor *head = &snake_body[SNAKE_FACE];
+        bool can_change_direction = head->enabled;
+        buder_vec2_t new_velocity = head->velocity;
+
+        bool is_key_up = bdr_keyboard_is_down(buder, BUDER_KEY_UP) || bdr_keyboard_is_down(buder, BUDER_KEY_W);
+        bool is_key_down = bdr_keyboard_is_down(buder, BUDER_KEY_DOWN) || bdr_keyboard_is_down(buder, BUDER_KEY_S);
+        bool is_key_left = bdr_keyboard_is_down(buder, BUDER_KEY_LEFT) || bdr_keyboard_is_down(buder, BUDER_KEY_A);
+        bool is_key_right = bdr_keyboard_is_down(buder, BUDER_KEY_RIGHT) || bdr_keyboard_is_down(buder, BUDER_KEY_D);
+
+        if (is_key_up && head->velocity.y == 0)
+        {
+            new_velocity = (buder_vec2_t){0, -GRID_SIZE};
+        }
+        else if (is_key_down && head->velocity.y == 0)
+        {
+            new_velocity = (buder_vec2_t){0, GRID_SIZE};
+        }
+        else if (is_key_left && head->velocity.x == 0)
+        {
+            new_velocity = (buder_vec2_t){-GRID_SIZE, 0};
+        }
+        else if (is_key_right && head->velocity.x == 0)
+        {
+            new_velocity = (buder_vec2_t){GRID_SIZE, 0};
+        }
+
+        if (is_valid_movement(head->velocity, new_velocity) && can_change_direction)
+        {
+            head->velocity = new_velocity;
+            head->enabled = false;
+        }
+    }
+
     update_snake_position(buder->width, buder->height, delta);
     update_food(buder->width, buder->height);
 
-    buder_begin_frame(buder);
+    // begin draw -- -- --
+    if (game_over)
     {
-        if (game_over)
-        {
-            float center_x = buder->width / 2;
-            float center_y = buder->height / 2;
+        int text_width = 0;
+        float center_x = buder->width / 2;
+        float center_y = buder->height / 2;
 
-            buder_draw_text(game_font, "Game Over",
-                            center_x, center_y, 30,
-                            (buder_vec2_t){0.5f, 0.0f}, RED, 0);
+        const char* instructions1 = "Game Over";
+        const int t1_width = bdr_text_measure(bdr_get_default_font(), instructions1, 30);
+        bdr_draw_text(instructions1, center_x - t1_width/2, center_y, 30, RED, 0);
 
-            buder_draw_text(game_font, "Press Space to Restart",
-                            center_x, center_y + 20, 20,
-                            (buder_vec2_t){0.5f, 0.0f}, RED, 0);
-        }
-        else
-        {
-            buder_draw_grid(buder->width, buder->height, GRID_SIZE, GRIDBLACK, 0);
-
-            buder_draw_text(game_font, buder_string_format("Score: %d", snake_score), 10, 20, 20,
-                            (buder_vec2_t){0.0f, 0.0f}, WHITE, 0);
-
-            buder_draw_text(game_font,
-                            "Move the Snake Up, Down, Left, or Right.",
-                            buder->width / 2,
-                            buder->height - 30, 20,
-                            (buder_vec2_t){0.5f, 0.0f}, WHITE, 0);
-
-            draw_food();
-            draw_snake();
-        }
+        const char* instructions2 = "Press [Space] to Restart";
+        const int t2_width = bdr_text_measure(bdr_get_default_font(), instructions2, 20);
+        bdr_draw_text(instructions2, center_x - t2_width/2, center_y + 20, 20, PINK, 0);
     }
-    buder_end_frame(buder);
-}
-
-void bwindow_event(buder_t *buder, const buder_event_t *event)
-{
-    if (event->type == BUDER_EVENT_KEY_DOWN)
+    else
     {
-        if (event->key == BUDER_KEY_SPACE && game_over)
-        {
-            game_over = false;
-            initialize_snake(buder->width, buder->height);
-            place_food(buder->width, buder->height);
-        }
-        else if (!game_over)
-        {
-            Actor *head = &snake_body[SNAKE_FACE];
-            bool can_change_direction = head->enabled;
-            buder_vec2_t new_velocity = head->velocity;
+        draw_food();
+        draw_snake();
 
-            switch (event->key)
-            {
-            case BUDER_KEY_UP:
-            case BUDER_KEY_W:
-                new_velocity = (buder_vec2_t){0, -GRID_SIZE};
-                break;
-            case BUDER_KEY_DOWN:
-            case BUDER_KEY_S:
-                new_velocity = (buder_vec2_t){0, GRID_SIZE};
-                break;
-            case BUDER_KEY_LEFT:
-            case BUDER_KEY_A:
-                new_velocity = (buder_vec2_t){-GRID_SIZE, 0};
-                break;
-            case BUDER_KEY_RIGHT:
-            case BUDER_KEY_D:
-                new_velocity = (buder_vec2_t){GRID_SIZE, 0};
-                break;
-            }
+        bdr_draw_grid(buder->width, buder->height, GRID_SIZE, GRIDBLACK, 0);
+        bdr_draw_text(bdr_string_format("Score: %d", snake_score), 10, 20, 20, WHITE, 0);
 
-            if (is_valid_movement(head->velocity, new_velocity) && can_change_direction)
-            {
-                head->velocity = new_velocity;
-                head->enabled = false;
-            }
-        }
+        const char* instructions = "Move the Snake Up, Down, Left, or Right.";
+        const int t1_width = bdr_text_measure(bdr_get_default_font(), instructions, 20);
+        bdr_draw_text(instructions, buder->width / 2 - t1_width/2, buder->height - 30, 20, WHITE, 0);
     }
+
+    bdr_viewport_present(buder);
 }
 
 void bwindow_shutdown(void)

@@ -14,19 +14,18 @@ void bwindow_shutdown(void);
 
 static void init(void)
 {
-    buder_init(&buder);
+    buder_init(&buder, sapp_width(), sapp_height());
     bwindow_init(&buder);
 }
 
 static void frame(void)
 {
-    buder_set_stage_size(&buder, sapp_width(), sapp_height());
     bwindow_frame(&buder, sapp_frame_duration());
 }
 
 static void eventcb(const sapp_event *event)
 {
-    bwindow_event(&buder, &(const buder_event_t){
+    bdr_event_pool(&buder, &(const buder_event_t){
         .mouse_x = event->mouse_x,
         .mouse_y = event->mouse_y,
         .mouse_dx = event->mouse_dx,
