@@ -13,9 +13,7 @@ static buder_texture_t button;
 void bwindow_init(buder_t *buder)
 {
     button = bdr_load_texture("resources/button.png");
-
     bdr_sprite_animation_register(&button_animation, 0, (buder_sprite_animation_frame_t){.hframe = 1, .vframe = 3, .texture = button});
-
 }
 
 void bwindow_frame(buder_t *buder, float delta)
@@ -36,6 +34,8 @@ void bwindow_frame(buder_t *buder, float delta)
     }
 
     // begin draw -- -- --
+
+    bdr_draw_grid(buder->width, buder->height, 32, GRIDBLACK, 0);
 
     bdr_draw_texture_rect(
         bdr_sprite_animation_get_texture(&button_animation),
