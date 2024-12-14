@@ -27,6 +27,8 @@
         "xlocale": "c",
         "ios": "c",
         "iterator": "c",
-        "xmemory": "c"
+        "xmemory": "c",
+        "iosfwd": "c",
+        "xlocbuf": "c"
     }
 }

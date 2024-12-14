@@ -14,9 +14,11 @@
 #include <math.h>
 #include "libraries/sokol/sokol_gfx.h"
 #include "libraries/sokol/sokol_gl.h"
+// #include "libraries/stb/stb_ds.h"
 
 #define MAX_KEYBOARD_KEYS 512
 #define MAX_MOUSE_BUTTONS 3
+#define MAX_SPRITE_ANIMATIONS 20
 
 // Some Basic Colors
 #define GRIDBLACK    (buder_color_t){ 20, 20, 20, 255 }
@@ -266,6 +268,25 @@ typedef struct buder_sound_t
     uint32_t id;
 } buder_sound_t;
 
+typedef struct buder_sprite_animation_frame_t
+{
+    int hframe;
+    int vframe;
+    int frame;
+    bool loop;
+    buder_texture_t texture;
+} buder_sprite_animation_frame_t;
+
+typedef struct buder_sprite_animation_t
+{
+    buder_sprite_animation_frame_t frames[MAX_SPRITE_ANIMATIONS];
+    int frames_count;
+    int frames_speed;
+    int target_fps;
+    int active;
+    uint32_t length;
+} buder_sprite_animation_t;
+
 typedef struct buder_event_t
 {
     buder_event_type type;
@@ -328,10 +349,20 @@ void bdr_camera_end(void);
 
 // MODULO TEXTURE AND SPRITES
 buder_texture_t bdr_load_texture(const char *filename);
+bool bdr_texture_is_valid(buder_texture_t texture);
 void bdr_free_texture(buder_texture_t texture);
 void bdr_draw_texture_pro(buder_texture_t texture, buder_rect_t src, buder_rect_t dst, buder_vec2_t scale, buder_vec2_t origin, float angle, buder_color_t tint, int layer_index);
 void bdr_draw_texture_rect(buder_texture_t texture, buder_rect_t src, buder_vec2_t position, buder_color_t tint, int layer_index);
 void bdr_draw_texture(buder_texture_t texture, buder_vec2_t position, buder_color_t tint, int layer_index);
+// exprimental sprite animation
+buder_rect_t bdr_sprite_animation_update(buder_sprite_animation_t *animation);
+buder_texture_t bdr_sprite_animation_get_texture(buder_sprite_animation_t *animation);
+void bdr_sprite_animation_play(buder_sprite_animation_t *animation, int active);
+void bdr_sprite_animation_set_speed(buder_sprite_animation_t *animation, int speed);
+// void bdr_sprite_animation_set_fps(buder_sprite_animation_t *animation, int fps);
+void bdr_sprite_animation_register(buder_sprite_animation_t *animation, int key_id, buder_sprite_animation_frame_t frame);
+void bdr_sprite_animation_unregister(buder_sprite_animation_t *animation, int key_id);
+void bdr_sprite_animation_destroy(buder_sprite_animation_t *animation);
 
 // MODULO FONTS y TEXT
 buder_font_t bdr_load_font(const char *filename);

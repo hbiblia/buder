@@ -212,6 +212,11 @@ buder_texture_t bdr_load_texture(const char *filename)
     return (buder_texture_t){.id = img_id.id, .width = width, .height = height, .sampler = sampler_id.id};
 }
 
+bool bdr_texture_is_valid(buder_texture_t texture)
+{
+    return texture.id != 0;
+}
+
 void bdr_free_texture(buder_texture_t texture)
 {
     sg_destroy_image((sg_image){texture.id});
@@ -272,6 +277,82 @@ void bdr_draw_texture(buder_texture_t texture, buder_vec2_t position, buder_colo
 {
     buder_rect_t src = {0.0f, 0.0f, texture.width, texture.height};
     bdr_draw_texture_rect(texture, src, position, tint, layer_index);
+}
+
+buder_rect_t bdr_sprite_animation_update(buder_sprite_animation_t *animation)
+{
+    buder_sprite_animation_frame_t *currentFrame = &animation->frames[animation->active];
+
+    animation->frames_count++;
+    if (animation->frames_count >= (60 / animation->frames_speed)) // animation->target_fps / speed
+    {
+        animation->frames_count = 0;
+        currentFrame->frame++;
+        if (currentFrame->frame > currentFrame->hframe)
+        {
+            currentFrame->frame = currentFrame->loop ? 0 : currentFrame->hframe;
+        }
+    }
+
+    int twidth = currentFrame->texture.width;
+    int theight = currentFrame->texture.height;
+
+    int frame_w = twidth / currentFrame->hframe;
+    int frame_h = theight / currentFrame->vframe;
+
+    float frame_x = ((currentFrame->frame - 1) % (int)(twidth / frame_w)) * frame_w;
+    float frame_y = (currentFrame->frame / (twidth / frame_h)) * frame_h;
+
+    buder_rect_t samurai_rect = (buder_rect_t){frame_x, frame_y, frame_w, frame_h};
+
+    return samurai_rect;
+}
+
+buder_texture_t bdr_sprite_animation_get_texture(buder_sprite_animation_t *animation)
+{
+    return animation->frames[animation->active].texture;
+}
+
+void bdr_sprite_animation_play(buder_sprite_animation_t *animation, int active)
+{
+    if (bdr_texture_is_valid(animation->frames[active].texture))
+    {
+        animation->active = active;
+        animation->frames_count = 0;
+        animation->frames[animation->active].frame = 0;
+    }
+}
+
+void bdr_sprite_animation_set_speed(buder_sprite_animation_t *animation, int speed)
+{
+    animation->frames_speed = speed;
+}
+
+// void bdr_sprite_animation_set_fps(buder_sprite_animation_t *animation, int fps)
+// {
+//     animation->target_fps = fps;
+// }
+
+void bdr_sprite_animation_register(buder_sprite_animation_t *animation, int key_id, buder_sprite_animation_frame_t frame)
+{
+    // animation->target_fps = animation->target_fps <= 0 ? 60 : animation->target_fps; // config default fps
+    animation->frames[key_id] = frame;
+    animation->length++;
+}
+
+void bdr_sprite_animation_unregister(buder_sprite_animation_t *animation, int key_id)
+{
+    bdr_free_texture(animation->frames[key_id].texture);
+    animation->frames[key_id] = (buder_sprite_animation_frame_t){0};
+    animation->length--;
+}
+
+void bdr_sprite_animation_destroy(buder_sprite_animation_t *animation)
+{
+    for (int i = animation->length - 1; i >= 0; i--)
+    {
+        bdr_sprite_animation_unregister(animation, i);
+    }
 }
 
 // MODULO FONTS y TEXT
@@ -662,7 +743,8 @@ void bdr_event_pool(buder_t *buder, const buder_event_t *event)
     bdr_event_mouse_position(buder, event->mouse_x, event->mouse_y);
     bdr_event_mouse_wheel(buder, event->scroll_x, event->scroll_y);
 
-    if (event->type == BUDER_EVENT_RESIZED) {
+    if (event->type == BUDER_EVENT_RESIZED)
+    {
         bdr_viewport_size(buder, event->width, event->height);
     }
 }
@@ -677,13 +759,13 @@ static void bdr_event_pool_end(buder_t *buder)
     buder->input._previous_mouse_position = buder->input._current_mouse_position;
 
     // keyboard previous state
-    for(int i = 0; i< MAX_KEYBOARD_KEYS; i++)
+    for (int i = 0; i < MAX_KEYBOARD_KEYS; i++)
     {
         buder->input._previous_key_state[i] = buder->input._current_key_state[i];
     }
 
     // mouse previous state
-    for(int i = 0; i< MAX_MOUSE_BUTTONS; i++)
+    for (int i = 0; i < MAX_MOUSE_BUTTONS; i++)
     {
         buder->input._previous_mouse_state[i] = buder->input._current_mouse_state[i];
     }
@@ -780,8 +862,10 @@ float bdr_mouse_wheel_move(buder_t *buder)
 {
     float result = 0.0f;
 
-    if(fabs(buder->input._current_mouse_wheel.x) > fabs(buder->input._current_mouse_wheel.y)) result = buder->input._current_mouse_wheel.x;
-    else result = buder->input._current_mouse_wheel.y;
+    if (fabs(buder->input._current_mouse_wheel.x) > fabs(buder->input._current_mouse_wheel.y))
+        result = buder->input._current_mouse_wheel.x;
+    else
+        result = buder->input._current_mouse_wheel.y;
 
     return result;
 }
@@ -811,5 +895,3 @@ bool bdr_keyboard_is_released(buder_t *buder, buder_keyboard key)
     buder->input._previous_key_state[key] = buder->input._current_key_state[key];
     return is_key_changed && is_key_up;
 }
-
-
