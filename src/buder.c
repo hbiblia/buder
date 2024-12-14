@@ -283,15 +283,22 @@ buder_rect_t bdr_sprite_animation_update(buder_sprite_animation_t *animation)
 {
     buder_sprite_animation_frame_t *currentFrame = &animation->frames[animation->active];
 
-    animation->frames_count++;
-    if (animation->frames_count >= (60 / animation->frames_speed)) // animation->target_fps / speed
+    if (animation->playing)
     {
-        animation->frames_count = 0;
-        currentFrame->frame++;
-        if (currentFrame->frame > currentFrame->hframe)
+        animation->frames_count++;
+        if (animation->frames_count >= (60 / animation->frames_speed)) // animation->target_fps / speed
         {
-            currentFrame->frame = currentFrame->loop ? 0 : currentFrame->hframe;
+            animation->frames_count = 0;
+            currentFrame->frame++;
+            if (currentFrame->frame > currentFrame->hframe)
+            {
+                currentFrame->frame = currentFrame->loop ? 0 : currentFrame->hframe;
+            }
         }
+    }
+
+    if (currentFrame->hframe == 0 || currentFrame->vframe == 0) {
+        return (buder_rect_t){0};
     }
 
     int twidth = currentFrame->texture.width;
@@ -300,12 +307,16 @@ buder_rect_t bdr_sprite_animation_update(buder_sprite_animation_t *animation)
     int frame_w = twidth / currentFrame->hframe;
     int frame_h = theight / currentFrame->vframe;
 
-    float frame_x = ((currentFrame->frame - 1) % (int)(twidth / frame_w)) * frame_w;
-    float frame_y = (currentFrame->frame / (twidth / frame_h)) * frame_h;
+    float frame_x = ((currentFrame->frame-1) % currentFrame->hframe) * frame_w;
+    float frame_y = (currentFrame->frame / currentFrame->hframe) * frame_h;
 
-    buder_rect_t samurai_rect = (buder_rect_t){frame_x, frame_y, frame_w, frame_h};
+    return (buder_rect_t){frame_x, frame_y, frame_w, frame_h};
+}
 
-    return samurai_rect;
+buder_vec2_t bdr_sprite_animation_get_size_frame(buder_sprite_animation_t *animation)
+{
+    buder_sprite_animation_frame_t *currentFrame = &animation->frames[animation->active];
+    return (buder_vec2_t){currentFrame->texture.width / currentFrame->hframe, currentFrame->texture.height / currentFrame->vframe};
 }
 
 buder_texture_t bdr_sprite_animation_get_texture(buder_sprite_animation_t *animation)
@@ -320,12 +331,18 @@ void bdr_sprite_animation_play(buder_sprite_animation_t *animation, int active)
         animation->active = active;
         animation->frames_count = 0;
         animation->frames[animation->active].frame = 0;
+        animation->playing = true;
     }
 }
 
 void bdr_sprite_animation_set_speed(buder_sprite_animation_t *animation, int speed)
 {
     animation->frames_speed = speed;
+}
+
+void bdr_sprite_animation_set_frame(buder_sprite_animation_t *animation, int frame)
+{
+    animation->frames[animation->active].frame = frame;
 }
 
 // void bdr_sprite_animation_set_fps(buder_sprite_animation_t *animation, int fps)
@@ -336,6 +353,7 @@ void bdr_sprite_animation_set_speed(buder_sprite_animation_t *animation, int spe
 void bdr_sprite_animation_register(buder_sprite_animation_t *animation, int key_id, buder_sprite_animation_frame_t frame)
 {
     // animation->target_fps = animation->target_fps <= 0 ? 60 : animation->target_fps; // config default fps
+    animation->frames_speed = animation->frames_speed <= 0 ? 12 : animation->frames_speed; // config default speed
     animation->frames[key_id] = frame;
     animation->length++;
 }
@@ -407,44 +425,50 @@ int bdr_text_measure(buder_font_t font, const char *text, float font_size)
     return fonsTextBounds(font_ctx, 0, 0, text, 0, NULL);
 }
 
+// MMODULO AUDIO (experimental)
 // MODULE AUDIO
-void bdr_play_sound(buder_sound_t sound)
+void bdr_play_sound(const char *filename)
 {
-    // ma_engine_play_sound(&audio_engine, audio, NULL);
+    ma_engine_play_sound(&audio_engine, filename, NULL);
 }
 
-buder_sound_t bdr_load_sound(const char *filename)
-{
-    return (buder_sound_t){0};
-}
+// buder_sound_t bdr_load_sound(const char *filename)
+// {
+//     buder_sound_t sound = {0};
+//     sound.id = ma_sound_init_from_file(&audio_engine, filename, 0, NULL, NULL, &sound.sound);
+//     if (sound.id != MA_SUCCESS) {
+//         return sound;
+//     }
+//     return sound;
+// }
 
-void bdr_free_sound(buder_sound_t sound)
-{
-}
+// void bdr_free_sound(buder_sound_t sound)
+// {
+// }
 
-void bdr_pause_sound(buder_sound_t sound)
-{
-}
+// void bdr_pause_sound(buder_sound_t sound)
+// {
+// }
 
-void bdr_resume_sound(buder_sound_t sound)
-{
-}
+// void bdr_resume_sound(buder_sound_t sound)
+// {
+// }
 
-void bdr_stop_sound(buder_sound_t sound)
-{
-}
+// void bdr_stop_sound(buder_sound_t sound)
+// {
+// }
 
-void bdr_set_sound_volume(buder_sound_t sound, float volume)
-{
-}
+// void bdr_set_sound_volume(buder_sound_t sound, float volume)
+// {
+// }
 
-void bdr_set_sound_pitch(buder_sound_t sound, float pitch)
-{
-}
+// void bdr_set_sound_pitch(buder_sound_t sound, float pitch)
+// {
+// }
 
-void bdr_set_sound_loop(buder_sound_t sound, bool loop)
-{
-}
+// void bdr_set_sound_loop(buder_sound_t sound, bool loop)
+// {
+// }
 
 // MODULE SHAPE
 void bdr_draw_rect(float x, float y, float w, float h, buder_color_t fill_color, buder_color_t outline_color, float outline_thickness, int layer_index)
@@ -895,3 +919,41 @@ bool bdr_keyboard_is_released(buder_t *buder, buder_keyboard key)
     buder->input._previous_key_state[key] = buder->input._current_key_state[key];
     return is_key_changed && is_key_up;
 }
+
+// COLLISION DETECTION
+bool bdr_collision_point_rec(buder_vec2_t point, buder_rect_t rec)
+{
+    return (point.x >= rec.x && point.x <= rec.x + rec.w && point.y >= rec.y && point.y <= rec.y + rec.h);
+}
+
+bool bdr_collision_rec_rec(buder_rect_t rec1, buder_rect_t rec2)
+{
+    return !(rec2.x > rec1.x + rec1.w || rec2.x + rec2.w < rec1.x || rec2.y > rec1.y + rec1.h || rec2.y + rec2.h < rec1.y);
+}
+
+bool bdr_collision_point_circle(buder_vec2_t point, buder_vec2_t center, float radius)
+{
+    return (sqrtf((point.x - center.x) * (point.x - center.x) + (point.y - center.y) * (point.y - center.y)) <= radius);
+}
+
+bool bdr_collision_circle_rec(buder_vec2_t center, float radius, buder_rect_t rec)
+{
+    float rec_center_x = rec.x + rec.w / 2;
+    float rec_center_y = rec.y + rec.h / 2;
+    float dx = fabs(center.x - rec_center_x);
+    float dy = fabs(center.y - rec_center_y);
+
+    if (dx > (rec.w / 2 + radius))
+        return false;
+    if (dy > (rec.h / 2 + radius))
+        return false;
+
+    if (dx <= (rec.w / 2))
+        return true;
+    if (dy <= (rec.h / 2))
+        return true;
+
+    float corner_dist = (dx - rec.w / 2) * (dx - rec.w / 2) + (dy - rec.h / 2) * (dy - rec.h / 2);
+    return (corner_dist <= (radius * radius));
+}
+

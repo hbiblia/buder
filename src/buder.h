@@ -263,10 +263,10 @@ typedef struct buder_font_t
     int id;
 } buder_font_t;
 
-typedef struct buder_sound_t
-{
-    uint32_t id;
-} buder_sound_t;
+// typedef struct buder_sound_t
+// {
+//     uint32_t id;
+// } buder_sound_t;
 
 typedef struct buder_sprite_animation_frame_t
 {
@@ -285,6 +285,7 @@ typedef struct buder_sprite_animation_t
     int target_fps;
     int active;
     uint32_t length;
+    bool playing;
 } buder_sprite_animation_t;
 
 typedef struct buder_event_t
@@ -357,8 +358,10 @@ void bdr_draw_texture(buder_texture_t texture, buder_vec2_t position, buder_colo
 // exprimental sprite animation
 buder_rect_t bdr_sprite_animation_update(buder_sprite_animation_t *animation);
 buder_texture_t bdr_sprite_animation_get_texture(buder_sprite_animation_t *animation);
+buder_vec2_t bdr_sprite_animation_get_size_frame(buder_sprite_animation_t *animation);
 void bdr_sprite_animation_play(buder_sprite_animation_t *animation, int active);
 void bdr_sprite_animation_set_speed(buder_sprite_animation_t *animation, int speed);
+void bdr_sprite_animation_set_frame(buder_sprite_animation_t *animation, int frame);
 // void bdr_sprite_animation_set_fps(buder_sprite_animation_t *animation, int fps);
 void bdr_sprite_animation_register(buder_sprite_animation_t *animation, int key_id, buder_sprite_animation_frame_t frame);
 void bdr_sprite_animation_unregister(buder_sprite_animation_t *animation, int key_id);
@@ -380,15 +383,16 @@ void bdr_draw_triangle(float x0, float y0, float x1, float y1, float x2, float y
 void bdr_draw_grid(int width, int height, int cell_size, buder_color_t color, int layer_index);
 
 // MODULE AUDIO
-void bdr_play_sound(buder_sound_t sound);
-buder_sound_t bdr_load_sound(const char *filename);
-void bdr_free_sound(buder_sound_t sound);
-void bdr_pause_sound(buder_sound_t sound);
-void bdr_resume_sound(buder_sound_t sound);
-void bdr_stop_sound(buder_sound_t sound);
-void bdr_set_sound_volume(buder_sound_t sound, float volume);
-void bdr_set_sound_pitch(buder_sound_t sound, float pitch);
-void bdr_set_sound_loop(buder_sound_t sound, bool loop);
+void bdr_play_sound(const char *filename);
+// void bdr_play_sound(buder_sound_t sound);
+// buder_sound_t bdr_load_sound(const char *filename);
+// void bdr_free_sound(buder_sound_t sound);
+// void bdr_pause_sound(buder_sound_t sound);
+// void bdr_resume_sound(buder_sound_t sound);
+// void bdr_stop_sound(buder_sound_t sound);
+// void bdr_set_sound_volume(buder_sound_t sound, float volume);
+// void bdr_set_sound_pitch(buder_sound_t sound, float pitch);
+// void bdr_set_sound_loop(buder_sound_t sound, bool loop);
 
 // MODULE COLOR
 buder_color_t bdr_color_fade(buder_color_t color, float alpha);
@@ -426,5 +430,11 @@ bool bdr_keyboard_is_up(buder_t *buder, buder_keyboard key);
 bool bdr_keyboard_is_down(buder_t *buder, buder_keyboard key);
 bool bdr_keyboard_is_pressed(buder_t *buder, buder_keyboard key);
 bool bdr_keyboard_is_released(buder_t *buder, buder_keyboard key);
+
+// COLLISION DETECTION
+bool bdr_collision_point_rec(buder_vec2_t point, buder_rect_t rec);
+bool bdr_collision_rec_rec(buder_rect_t rec1, buder_rect_t rec2);
+bool bdr_collision_point_circle(buder_vec2_t point, buder_vec2_t center, float radius);
+bool bdr_collision_circle_rec(buder_vec2_t center, float radius, buder_rect_t rec);
 
 #endif // BUDER_H
