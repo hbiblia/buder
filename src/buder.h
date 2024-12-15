@@ -274,6 +274,8 @@ typedef struct buder_sprite_animation_frame_t
     int vframe;
     int frame;
     bool loop;
+    int start;
+    int end;
     buder_texture_t texture;
 } buder_sprite_animation_frame_t;
 
@@ -359,6 +361,7 @@ void bdr_draw_texture(buder_texture_t texture, buder_vec2_t position, buder_colo
 buder_rect_t bdr_sprite_animation_update(buder_sprite_animation_t *animation);
 buder_texture_t bdr_sprite_animation_get_texture(buder_sprite_animation_t *animation);
 buder_vec2_t bdr_sprite_animation_get_size_frame(buder_sprite_animation_t *animation);
+bool bdr_sprite_animation_is_finished(buder_sprite_animation_t *animation);
 void bdr_sprite_animation_play(buder_sprite_animation_t *animation, int active);
 void bdr_sprite_animation_set_speed(buder_sprite_animation_t *animation, int speed);
 void bdr_sprite_animation_set_frame(buder_sprite_animation_t *animation, int frame);

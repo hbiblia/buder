@@ -290,9 +290,9 @@ buder_rect_t bdr_sprite_animation_update(buder_sprite_animation_t *animation)
         {
             animation->frames_count = 0;
             currentFrame->frame++;
-            if (currentFrame->frame > currentFrame->hframe)
+            if (currentFrame->frame > currentFrame->end)
             {
-                currentFrame->frame = currentFrame->loop ? 0 : currentFrame->hframe;
+                currentFrame->frame = currentFrame->loop ? currentFrame->start : currentFrame->end;
             }
         }
     }
@@ -307,7 +307,7 @@ buder_rect_t bdr_sprite_animation_update(buder_sprite_animation_t *animation)
     int frame_w = twidth / currentFrame->hframe;
     int frame_h = theight / currentFrame->vframe;
 
-    float frame_x = ((currentFrame->frame-1) % currentFrame->hframe) * frame_w;
+    float frame_x = (currentFrame->frame % currentFrame->hframe) * frame_w;
     float frame_y = (currentFrame->frame / currentFrame->hframe) * frame_h;
 
     return (buder_rect_t){frame_x, frame_y, frame_w, frame_h};
@@ -324,13 +324,20 @@ buder_texture_t bdr_sprite_animation_get_texture(buder_sprite_animation_t *anima
     return animation->frames[animation->active].texture;
 }
 
+// solo indica si ha llegado al último frame
+bool bdr_sprite_animation_is_finished(buder_sprite_animation_t *animation)
+{
+    buder_sprite_animation_frame_t *currentFrame = &animation->frames[animation->active];
+    return currentFrame->frame >= currentFrame->end;
+}
+
 void bdr_sprite_animation_play(buder_sprite_animation_t *animation, int active)
 {
     if (bdr_texture_is_valid(animation->frames[active].texture))
     {
         animation->active = active;
         animation->frames_count = 0;
-        animation->frames[animation->active].frame = 0;
+        animation->frames[animation->active].frame = animation->frames[animation->active].start;
         animation->playing = true;
     }
 }
@@ -354,6 +361,8 @@ void bdr_sprite_animation_register(buder_sprite_animation_t *animation, int key_
 {
     // animation->target_fps = animation->target_fps <= 0 ? 60 : animation->target_fps; // config default fps
     animation->frames_speed = animation->frames_speed <= 0 ? 12 : animation->frames_speed; // config default speed
+    frame.start = frame.start < 0 ? 0 : frame.start;
+    frame.end = frame.end <= 0 ? (frame.hframe * frame.vframe) - 1 : (frame.end - 1);
     animation->frames[key_id] = frame;
     animation->length++;
 }
